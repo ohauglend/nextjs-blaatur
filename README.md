@@ -1,33 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎭 Blåtur - Mystery Trip App
+
+A state-driven web application for managing mystery trips with personalized participant experiences. Built with Next.js and TypeScript for 8 participants (3 hosts, 5 guests).
+
+## 🚀 Features
+
+### 🎛️ Host Control Panel
+- **Main Dashboard**: Central control for trip hosts (Oskar, Odd, Aasmund)
+- **Participant Management**: Access to all participant screens
+- **Real-time State Monitoring**: See what each participant sees
+
+### 👤 Personalized Experience (Emilie, Mathias, Brage, Sara, Johanna)
+- **Dynamic Header**: Personal emoji, name, and current trip state
+- **Info Panel**: Hotel details, photo sharing, weather, emergency contacts  
+- **State-Based Content**: Different components based on trip progress
+
+### 📱 Trip States
+1. **Pre-Trip**: Countdown timer + destination guessing
+2. **Packing**: Personalized packing lists
+3. **Flight**: Boarding pass QR codes + flight details
+4. **Day 1**: Team challenges (4 teams of 2) + restaurant reservations
+5. **Day 2**: Group competitions (2 teams of 4)
+6. **Flight Home**: Return booking + Google Drive access
+7. **After Trip**: Thank you screen + photo sharing
+
+### ✅ Implemented Features
+- **State Management**: Simple state-driven UI without backend
+- **Team Activities**: Color-coded teams with restaurant integration
+- **Mobile-First Design**: Optimized for phone usage during travel
+- **Asset Management**: Photos, QR codes, bookings per participant
+- **Emergency Info**: Contact details + hotel information
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### URL Structure
+```
+/                    # Landing page with participant selection
+/emilie             # Emilie's personal page
+/mathias            # Mathias's personal page
+/brage              # Brage's personal page
+/sara               # Sara's personal page
+/johanna            # Johanna's personal page
+/oskar              # Oskar's personal page (host)
+/odd                # Odd's personal page (host)
+/aasmund            # Aasmund's personal page (host)
+```
 
-## Learn More
+### Technical Decisions
 
-To learn more about Next.js, take a look at the following resources:
+#### ✅ No Authentication System
+- **Why**: Fixed participant list, avoid complexity
+- **How**: URL-based access with bookmarkable links
+- **Benefits**: No passwords, easy sharing, instant access
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### ✅ Static-First Architecture
+- **Why**: Simple deployment, low maintenance
+- **How**: Client-side time checking, JSON data files
+- **Benefits**: Fast loading, no server costs, reliable
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#### ✅ Time-Based Content
+- **Why**: No manual intervention needed during trip
+- **How**: JavaScript Date comparison with UTC timestamps
+- **Benefits**: Automated reveals, works across timezones
 
 ## Deploy on Vercel
 
