@@ -14,12 +14,6 @@ export default function HostControlPanel() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        {/* TEST MESSAGE FOR AUTOMATIC DEPLOYMENT */}
-        <div className="text-center mb-8 p-6 bg-red-500 text-white rounded-lg shadow-xl">
-          <h1 className="text-6xl font-bold mb-4">🚀 TEST FOR AUTOMATIC DEPLOYMENT 🚀</h1>
-          <p className="text-2xl font-semibold">This message confirms Vercel auto-deploy is working!</p>
-        </div>
-        
         {/* Host Header */}
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-gray-800 mb-4">
