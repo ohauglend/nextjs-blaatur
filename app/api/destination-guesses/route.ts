@@ -1,12 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { DestinationGuessService } from '@/lib/db';
 import { isValidParticipant } from '@/utils/participantUtils';
 
 export async function POST(request: NextRequest) {
+  // For local development, simulate success without database
+  if (process.env.NODE_ENV === 'development') {
+    const body = await request.json();
+    const { participantId, guess } = body;
+
+    // Validate required fields
+    if (!participantId || !guess) {
+      return NextResponse.json(
+        { error: 'Participant ID and guess are required' },
+        { status: 400 }
+      );
+    }
+
+    // Simulate successful response for local testing
+    return NextResponse.json({
+      success: true,
+      message: 'Local development mode - guess would be saved in production',
+      guess: {
+        id: Math.floor(Math.random() * 1000),
+        participant_id: participantId,
+        guess: guess,
+        created_at: new Date().toISOString()
+      }
+    });
+  }
+
   // Check if we have database connection
-  if (!process.env.POSTGRES_URL) {
+  if (!process.env.DATABASE_URL) {
     return NextResponse.json(
-      { error: 'Database not configured. Please set up Vercel Postgres.' },
+      { error: 'Database not yet configured. This feature will work after deployment to Vercel.' },
       { status: 503 }
     );
   }
@@ -15,55 +41,31 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { participantId, guess } = body;
 
-    // Validation
+    // Validate required fields
     if (!participantId || !guess) {
       return NextResponse.json(
-        { error: 'participantId and guess are required' },
+        { error: 'Participant ID and guess are required' },
         { status: 400 }
       );
     }
 
-    if (typeof participantId !== 'string' || typeof guess !== 'string') {
-      return NextResponse.json(
-        { error: 'participantId and guess must be strings' },
-        { status: 400 }
-      );
-    }
-
-    // Validate participant exists
+    // Validate participant exists in our system
     if (!isValidParticipant(participantId)) {
       return NextResponse.json(
-        { error: 'Invalid participant ID' },
+        { error: 'Invalid participant' },
         { status: 400 }
       );
     }
 
-    // Sanitize guess (trim whitespace, limit length)
-    const sanitizedGuess = guess.trim();
-    if (sanitizedGuess.length === 0) {
-      return NextResponse.json(
-        { error: 'Guess cannot be empty' },
-        { status: 400 }
-      );
-    }
-
-    if (sanitizedGuess.length > 500) {
-      return NextResponse.json(
-        { error: 'Guess is too long (max 500 characters)' },
-        { status: 400 }
-      );
-    }
-
-    // Create the guess
-    const newGuess = await DestinationGuessService.createGuess(participantId, sanitizedGuess);
-
+    const destinationGuess = await DestinationGuessService.createGuess(participantId, guess);
+    
     return NextResponse.json({
       success: true,
-      data: newGuess
-    }, { status: 201 });
+      guess: destinationGuess
+    });
 
   } catch (error) {
-    console.error('Error in POST /api/destination-guesses:', error);
+    console.error('Error creating guess:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -72,10 +74,32 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  // For local development, return sample data
+  if (process.env.NODE_ENV === 'development') {
+    return NextResponse.json({
+      success: true,
+      message: 'Local development mode - showing sample data',
+      guesses: [
+        {
+          id: 1,
+          participant_id: 'emilie',
+          guess: 'Prague',
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 2,
+          participant_id: 'mathias',
+          guess: 'Barcelona',
+          created_at: new Date().toISOString()
+        }
+      ]
+    });
+  }
+
   // Check if we have database connection
-  if (!process.env.POSTGRES_URL) {
+  if (!process.env.DATABASE_URL) {
     return NextResponse.json(
-      { error: 'Database not configured. Please set up Vercel Postgres.' },
+      { error: 'Database not yet configured. This feature will work after deployment to Vercel.' },
       { status: 503 }
     );
   }
@@ -85,11 +109,11 @@ export async function GET() {
     
     return NextResponse.json({
       success: true,
-      data: guesses
+      guesses
     });
 
   } catch (error) {
-    console.error('Error in GET /api/destination-guesses:', error);
+    console.error('Error fetching guesses:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

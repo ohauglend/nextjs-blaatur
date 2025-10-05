@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { neon } from '@neondatabase/serverless';
 
 export interface DestinationGuess {
   id: number;
@@ -6,6 +6,9 @@ export interface DestinationGuess {
   guess: string;
   created_at: string;
 }
+
+// Initialize the Neon connection
+const sql = neon(process.env.DATABASE_URL!);
 
 export class DestinationGuessService {
   
@@ -20,7 +23,7 @@ export class DestinationGuessService {
         RETURNING id, participant_id, guess, created_at
       `;
       
-      return result.rows[0] as DestinationGuess;
+      return result[0] as DestinationGuess;
     } catch (error) {
       console.error('Error creating destination guess:', error);
       throw new Error('Failed to create destination guess');
@@ -38,7 +41,7 @@ export class DestinationGuessService {
         ORDER BY created_at DESC
       `;
       
-      return result.rows as DestinationGuess[];
+      return result as DestinationGuess[];
     } catch (error) {
       console.error('Error fetching all destination guesses:', error);
       throw new Error('Failed to fetch destination guesses');
@@ -57,7 +60,7 @@ export class DestinationGuessService {
         ORDER BY created_at DESC
       `;
       
-      return result.rows as DestinationGuess[];
+      return result as DestinationGuess[];
     } catch (error) {
       console.error('Error fetching participant guesses:', error);
       throw new Error('Failed to fetch participant guesses');

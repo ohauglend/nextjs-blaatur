@@ -12,10 +12,28 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ) {
+  // For local development, return sample data for the participant
+  if (process.env.NODE_ENV === 'development') {
+    const { participant } = await context.params;
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Local development mode - showing sample data for participant',
+      data: [
+        {
+          id: 1,
+          participant_id: participant,
+          guess: 'Prague',
+          created_at: new Date().toISOString()
+        }
+      ]
+    });
+  }
+
   // Check if we have database connection
-  if (!process.env.POSTGRES_URL) {
+  if (!process.env.DATABASE_URL) {
     return NextResponse.json(
-      { error: 'Database not configured. Please set up Vercel Postgres.' },
+      { error: 'Database not configured. Please set up DATABASE_URL environment variable.' },
       { status: 503 }
     );
   }
