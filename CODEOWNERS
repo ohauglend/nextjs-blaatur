@@ -1,0 +1,7 @@
+# Global code ownership - all files require approval from ohauglend
+* @ohauglend
+
+# You can add more specific rules here if needed, for example:
+# /docs/ @ohauglend @documentation-team
+# *.js @ohauglend @javascript-team
+# /app/ @ohauglend
