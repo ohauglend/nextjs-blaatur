@@ -3,6 +3,7 @@ import { PARTICIPANT_ASSETS } from '@/data/participant-assets';
 import PackingList from '@/components/PackingList';
 import CountdownTimer from '@/components/CountdownTimer';
 import DestinationGuess from '@/components/DestinationGuess';
+import VotingInterface from '@/components/VotingInterface';
 import TeamActivity from '@/components/TeamActivity';
 import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
@@ -77,6 +78,15 @@ export default function HostOverview({ participantId }: HostOverviewProps) {
             <TeamActivity participantId={participantId} day={2} />
           </div>
         </div>
+      </div>
+
+      {/* Voting Component */}
+      <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+        <h3 className="font-bold text-purple-800 mb-3 flex items-center">
+          <span className="mr-2">🗳️</span>
+          Voting Component
+        </h3>
+        <VotingInterface participantId={participantId} />
       </div>
 
       {/* Thank You Component */}

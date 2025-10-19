@@ -9,6 +9,7 @@ import ParticipantHeader from '@/components/ParticipantHeader';
 import PackingList from '@/components/PackingList';
 import CountdownTimer from '@/components/CountdownTimer';
 import DestinationGuess from '@/components/DestinationGuess';
+import VotingInterface from '@/components/VotingInterface';
 import TeamActivity from '@/components/TeamActivity';
 import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
@@ -100,12 +101,18 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
 
           {/* Day 1 */}
           {currentState === 'day-1' && (
-            <TeamActivity participantId={participantId} day={1} />
+            <>
+              <TeamActivity participantId={participantId} day={1} />
+              <VotingInterface participantId={participantId} />
+            </>
           )}
 
           {/* Day 2 */}
           {currentState === 'day-2' && (
-            <TeamActivity participantId={participantId} day={2} />
+            <>
+              <TeamActivity participantId={participantId} day={2} />
+              <VotingInterface participantId={participantId} />
+            </>
           )}
 
           {/* Flight Home */}
