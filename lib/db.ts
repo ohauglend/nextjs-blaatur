@@ -14,6 +14,11 @@ export interface DestinationGuess {
   created_at: string;
 }
 
+// Validate DATABASE_URL exists
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL environment variable is not set');
+}
+
 // Initialize the Neon connection
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -31,12 +36,16 @@ export class DestinationGuessService {
     guess?: string
   ): Promise<DestinationGuess> {
     try {
+      console.log('DB: Deactivating existing guesses for participant:', participantId);
+      
       // First, deactivate any existing active guesses for this participant
-      await sql`
+      const updateResult = await sql`
         UPDATE destination_guesses
         SET is_active = false
         WHERE participant_id = ${participantId} AND is_active = true
       `;
+      
+      console.log('DB: Deactivated guesses, now inserting new guess');
       
       // Then insert the new guess as active
       const result = await sql`
@@ -63,10 +72,26 @@ export class DestinationGuessService {
         RETURNING *
       `;
       
+      if (!result || result.length === 0) {
+        console.error('DB: No result returned from INSERT query');
+        throw new Error('No result returned from database insert');
+      }
+      
+      console.log('DB: Successfully inserted guess with id:', result[0].id);
+      
       return result[0] as DestinationGuess;
     } catch (error) {
-      console.error('Error creating destination guess:', error);
-      throw new Error('Failed to create destination guess');
+      console.error('DB: Error creating destination guess:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        participantId,
+        cityName,
+        country,
+        latitude,
+        longitude
+      });
+      throw error;
     }
   }
 
@@ -75,16 +100,22 @@ export class DestinationGuessService {
    */
   static async getAllGuesses(): Promise<DestinationGuess[]> {
     try {
+      console.log('DB: Fetching all destination guesses');
       const result = await sql`
         SELECT *
         FROM destination_guesses
         ORDER BY created_at DESC
       `;
       
+      console.log('DB: Fetched', result.length, 'guesses');
       return result as DestinationGuess[];
     } catch (error) {
-      console.error('Error fetching all destination guesses:', error);
-      throw new Error('Failed to fetch destination guesses');
+      console.error('DB: Error fetching all destination guesses:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
     }
   }
 
@@ -93,6 +124,7 @@ export class DestinationGuessService {
    */
   static async getGuessesByParticipant(participantId: string): Promise<DestinationGuess[]> {
     try {
+      console.log('DB: Fetching guesses for participant:', participantId);
       const result = await sql`
         SELECT *
         FROM destination_guesses
@@ -100,10 +132,16 @@ export class DestinationGuessService {
         ORDER BY created_at DESC
       `;
       
+      console.log('DB: Fetched', result.length, 'guesses for participant:', participantId);
       return result as DestinationGuess[];
     } catch (error) {
-      console.error('Error fetching participant guesses:', error);
-      throw new Error('Failed to fetch participant guesses');
+      console.error('DB: Error fetching participant guesses:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        participantId
+      });
+      throw error;
     }
   }
 
