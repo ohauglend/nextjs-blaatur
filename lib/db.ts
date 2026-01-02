@@ -57,6 +57,7 @@ export class DestinationGuessService {
           latitude, 
           longitude, 
           is_active,
+          distance_km,
           is_correct_destination
         )
         VALUES (
@@ -67,6 +68,7 @@ export class DestinationGuessService {
           ${latitude}, 
           ${longitude}, 
           true,
+          NULL,
           false
         )
         RETURNING *
