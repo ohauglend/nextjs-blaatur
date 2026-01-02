@@ -62,13 +62,13 @@ export class DestinationGuessService {
         )
         VALUES (
           ${participantId}, 
-          ${guess || null}, 
+          ${cityName}, 
           ${cityName}, 
           ${country}, 
           ${latitude}, 
           ${longitude}, 
           true,
-          NULL,
+          0,
           false
         )
         RETURNING *
