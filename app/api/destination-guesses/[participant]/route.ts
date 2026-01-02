@@ -23,7 +23,14 @@ export async function GET(
         {
           id: 1,
           participant_id: participant,
-          guess: 'Prague',
+          guess: null,
+          city_name: 'Prague',
+          country: 'Czech Republic',
+          latitude: 50.0755,
+          longitude: 14.4378,
+          is_active: true,
+          distance_km: null,
+          is_correct_destination: false,
           created_at: new Date().toISOString()
         }
       ]

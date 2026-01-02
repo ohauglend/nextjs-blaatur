@@ -6,12 +6,12 @@ export async function POST(request: NextRequest) {
   // For local development, simulate success without database
   if (process.env.NODE_ENV === 'development') {
     const body = await request.json();
-    const { participantId, guess } = body;
+    const { participantId, cityName, country, latitude, longitude } = body;
 
     // Validate required fields
-    if (!participantId || !guess) {
+    if (!participantId || !cityName || !country || latitude === undefined || longitude === undefined) {
       return NextResponse.json(
-        { error: 'Participant ID and guess are required' },
+        { error: 'Participant ID, city name, country, latitude, and longitude are required' },
         { status: 400 }
       );
     }
@@ -23,7 +23,14 @@ export async function POST(request: NextRequest) {
       guess: {
         id: Math.floor(Math.random() * 1000),
         participant_id: participantId,
-        guess: guess,
+        guess: null,
+        city_name: cityName,
+        country: country,
+        latitude: latitude,
+        longitude: longitude,
+        is_active: true,
+        distance_km: null,
+        is_correct_destination: false,
         created_at: new Date().toISOString()
       }
     });
@@ -39,12 +46,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { participantId, guess } = body;
+    const { participantId, cityName, country, latitude, longitude } = body;
 
     // Validate required fields
-    if (!participantId || !guess) {
+    if (!participantId || !cityName || !country || latitude === undefined || longitude === undefined) {
       return NextResponse.json(
-        { error: 'Participant ID and guess are required' },
+        { error: 'Participant ID, city name, country, latitude, and longitude are required' },
         { status: 400 }
       );
     }
@@ -57,7 +64,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const destinationGuess = await DestinationGuessService.createGuess(participantId, guess);
+    const destinationGuess = await DestinationGuessService.createGuess(
+      participantId, 
+      cityName, 
+      country, 
+      latitude, 
+      longitude
+    );
     
     return NextResponse.json({
       success: true,
@@ -83,13 +96,27 @@ export async function GET() {
         {
           id: 1,
           participant_id: 'emilie',
-          guess: 'Prague',
+          guess: null,
+          city_name: 'Prague',
+          country: 'Czech Republic',
+          latitude: 50.0755,
+          longitude: 14.4378,
+          is_active: true,
+          distance_km: null,
+          is_correct_destination: false,
           created_at: new Date().toISOString()
         },
         {
           id: 2,
           participant_id: 'mathias',
-          guess: 'Barcelona',
+          guess: null,
+          city_name: 'Barcelona',
+          country: 'Spain',
+          latitude: 41.3851,
+          longitude: 2.1734,
+          is_active: true,
+          distance_km: null,
+          is_correct_destination: false,
           created_at: new Date().toISOString()
         }
       ]

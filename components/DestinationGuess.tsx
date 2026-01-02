@@ -1,11 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import CitySelector from './CitySelector';
+import { City } from '@/utils/cityData';
 
 interface DestinationGuess {
   id: number;
   participant_id: string;
-  guess: string;
+  guess: string | null;
+  city_name: string | null;
+  country: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  is_active: boolean;
+  distance_km: number | null;
+  is_correct_destination: boolean;
   created_at: string;
 }
 
@@ -14,10 +23,11 @@ interface DestinationGuessProps {
 }
 
 export default function DestinationGuess({ participantId }: DestinationGuessProps) {
-  const [guess, setGuess] = useState('');
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousGuesses, setPreviousGuesses] = useState<DestinationGuess[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Load previous guesses on component mount
   useEffect(() => {
@@ -36,12 +46,17 @@ export default function DestinationGuess({ participantId }: DestinationGuessProp
     }
   };
 
+  const handleCitySelect = (city: City) => {
+    setSelectedCity(city);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guess.trim()) return;
+    if (!selectedCity) return;
 
     setIsSubmitting(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const response = await fetch('/api/destination-guesses', {
@@ -51,16 +66,22 @@ export default function DestinationGuess({ participantId }: DestinationGuessProp
         },
         body: JSON.stringify({
           participantId,
-          guess: guess.trim()
+          cityName: selectedCity.name,
+          country: selectedCity.country,
+          latitude: selectedCity.latitude,
+          longitude: selectedCity.longitude,
         })
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        // Success! Clear the form and reload guesses
-        setGuess('');
+        // Success! Show success message and reload guesses
+        setSuccessMessage(`Guess updated to ${selectedCity.name}`);
         await loadPreviousGuesses();
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         // Handle specific error cases
         if (response.status === 503) {
@@ -77,6 +98,9 @@ export default function DestinationGuess({ participantId }: DestinationGuessProp
     }
   };
 
+  // Get the active guess
+  const activeGuess = previousGuesses.find(g => g.is_active);
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
       <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
@@ -84,10 +108,20 @@ export default function DestinationGuess({ participantId }: DestinationGuessProp
         Guess the Destination
       </h2>
 
+      {/* Currently guessing display */}
+      {activeGuess && activeGuess.city_name && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-gray-600">Currently guessing:</p>
+          <p className="text-lg font-semibold text-blue-800">
+            {activeGuess.city_name}, {activeGuess.country}
+          </p>
+        </div>
+      )}
+
       {/* Guess Form */}
       <form onSubmit={handleSubmit} className="space-y-4 mb-6">
         <p className="text-gray-600">
-          Where do you think we're going? Make your best guess!
+          Where do you think we're going? Search for a city and make your best guess!
         </p>
         
         {error && (
@@ -95,23 +129,24 @@ export default function DestinationGuess({ participantId }: DestinationGuessProp
             <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
+
+        {successMessage && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-700 text-sm">{successMessage}</p>
+          </div>
+        )}
         
         <div>
-          <input
-            type="text"
-            value={guess}
-            onChange={(e) => setGuess(e.target.value)}
-            placeholder="Enter your destination guess..."
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
+          <CitySelector 
+            onSelect={handleCitySelect} 
             disabled={isSubmitting}
-            maxLength={500}
+            selectedCity={selectedCity}
           />
         </div>
 
         <button
           type="submit"
-          disabled={isSubmitting || !guess.trim()}
+          disabled={isSubmitting || !selectedCity}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
@@ -133,10 +168,28 @@ export default function DestinationGuess({ participantId }: DestinationGuessProp
             Your Previous Guesses ({previousGuesses.length})
           </h3>
           <div className="space-y-2 max-h-32 overflow-y-auto">
-            {previousGuesses.map((prevGuess, index) => (
-              <div key={prevGuess.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
-                <span className="font-medium">"{prevGuess.guess}"</span>
-                <span className="text-gray-500 text-xs">
+            {previousGuesses.map((prevGuess) => (
+              <div 
+                key={prevGuess.id} 
+                className={`flex items-center justify-between p-2 rounded text-sm ${
+                  prevGuess.is_active 
+                    ? 'bg-blue-50 border border-blue-200' 
+                    : 'bg-gray-50 text-gray-500'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">
+                    {prevGuess.city_name && prevGuess.country 
+                      ? `${prevGuess.city_name}, ${prevGuess.country}` 
+                      : `"${prevGuess.guess}"`}
+                  </span>
+                  {prevGuess.is_active && (
+                    <span className="px-2 py-0.5 bg-blue-500 text-white text-xs rounded-full">
+                      Current Guess
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs">
                   {new Date(prevGuess.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
