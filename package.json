@@ -13,7 +13,6 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/postgres": "^0.10.0",
-    "cities-list": "^1.0.3",
     "cities.json": "^1.1.50",
     "next": "15.5.9",
     "react": "19.1.0",
