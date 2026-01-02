@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!participantId || !cityName || !country || latitude === undefined || longitude === undefined) {
+      console.error('Validation error - missing required fields:', { participantId, cityName, country, latitude, longitude });
       return NextResponse.json(
         { error: 'Participant ID, city name, country, latitude, and longitude are required' },
         { status: 400 }
@@ -58,12 +59,15 @@ export async function POST(request: NextRequest) {
 
     // Validate participant exists in our system
     if (!isValidParticipant(participantId)) {
+      console.error('Invalid participant:', participantId);
       return NextResponse.json(
         { error: 'Invalid participant' },
         { status: 400 }
       );
     }
 
+    console.log('Creating destination guess for participant:', participantId, { cityName, country, latitude, longitude });
+    
     const destinationGuess = await DestinationGuessService.createGuess(
       participantId, 
       cityName, 
@@ -72,13 +76,34 @@ export async function POST(request: NextRequest) {
       longitude
     );
     
+    console.log('Successfully created destination guess:', destinationGuess.id);
+    
     return NextResponse.json({
       success: true,
       guess: destinationGuess
     });
 
   } catch (error) {
-    console.error('Error creating guess:', error);
+    // Enhanced error logging for production debugging
+    console.error('Error creating guess - Full error details:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    });
+    
+    // Return more detailed error in development
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.json(
+        { 
+          error: 'Internal server error',
+          details: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
