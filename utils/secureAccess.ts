@@ -1,3 +1,5 @@
+import { PARTICIPANTS } from '@/data/participants';
+
 // Secure access tokens for each participant
 // In production, these would be randomly generated GUIDs
 export const PARTICIPANT_TOKENS: Record<string, string> = {
@@ -35,12 +37,34 @@ export function generateSecureUrl(participantId: string): string | null {
 }
 
 export function parseSecureUrl(token: string, participant: string): { isValid: boolean; participantId: string | null } {
-  // Check if the token matches the participant
-  const expectedParticipant = getParticipantByToken(token);
-  
-  if (!expectedParticipant || expectedParticipant !== participant) {
+  // Check if the token is valid
+  if (!isValidToken(token)) {
     return { isValid: false, participantId: null };
   }
   
-  return { isValid: true, participantId: participant };
+  // Get the participant ID associated with this token
+  const tokenOwner = getParticipantByToken(token);
+  
+  if (!tokenOwner) {
+    return { isValid: false, participantId: null };
+  }
+  
+  // Check if the requested participant exists
+  if (!PARTICIPANTS[participant]) {
+    return { isValid: false, participantId: null };
+  }
+  
+  // Check if token owner is a host
+  const tokenOwnerData = PARTICIPANTS[tokenOwner];
+  const isHost = tokenOwnerData?.role === 'host';
+  
+  // Allow access if:
+  // 1. Token matches the participant (own page), OR
+  // 2. Token owner is a host (hosts can view all participants)
+  if (tokenOwner === participant || isHost) {
+    return { isValid: true, participantId: participant };
+  }
+  
+  // Guests cannot access other participants' pages
+  return { isValid: false, participantId: null };
 }
