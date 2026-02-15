@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import HostNavigation from './HostNavigation';
 import { TRIP_CONFIG } from '@/data/participants';
-import { getCurrentState, getAllStates } from '@/data/states';
+import { getAllStates } from '@/data/states';
+import { getEffectiveCurrentState } from '@/utils/stateManager';
 import { getAllParticipants, getParticipantsByRole } from '@/utils/participantUtils';
 import { PARTICIPANT_ASSETS } from '@/data/participant-assets';
 
@@ -12,11 +14,16 @@ interface HostDashboardProps {
 }
 
 export default function HostDashboard({ token }: HostDashboardProps) {
-  const currentState = getCurrentState();
+  const [currentState, setCurrentState] = useState(getEffectiveCurrentState());
   const allStates = getAllStates();
   const currentStateData = allStates.find(s => s.id === currentState);
   const hosts = getParticipantsByRole('host');
   const guests = getParticipantsByRole('guest');
+
+  useEffect(() => {
+    // Update state from localStorage on mount
+    setCurrentState(getEffectiveCurrentState());
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-orange-50 to-red-100">

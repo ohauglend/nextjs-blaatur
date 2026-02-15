@@ -1,15 +1,21 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import HostNavigation from './HostNavigation';
 import StateControl from './StateControl';
-import { getCurrentState } from '@/data/states';
+import { getEffectiveCurrentState } from '@/utils/stateManager';
 
 interface HostControlsProps {
   token: string;
 }
 
 export default function HostControls({ token }: HostControlsProps) {
-  const currentState = getCurrentState();
+  const [currentState, setCurrentState] = useState(getEffectiveCurrentState());
+
+  useEffect(() => {
+    // Update state from localStorage on mount
+    setCurrentState(getEffectiveCurrentState());
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-orange-50 to-red-100">
