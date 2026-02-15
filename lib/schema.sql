@@ -33,3 +33,23 @@ ON destination_guesses(participant_id, is_active);
 -- Index for correct destination
 CREATE INDEX IF NOT EXISTS idx_destination_guesses_correct 
 ON destination_guesses(is_correct_destination);
+
+-- =====================================================
+-- Trip State Management
+-- =====================================================
+-- Stores the current active state of the trip
+-- This is a single-row table that tracks which phase of the trip is active
+-- Examples: 'pre-trip', 'pre-trip-packing', 'flight', 'day-1', etc.
+
+CREATE TABLE IF NOT EXISTS trip_state (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    state_id VARCHAR(50) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_by VARCHAR(50),
+    CHECK (id = 1)  -- Only allow one row
+);
+
+-- Insert the initial/default state
+INSERT INTO trip_state (id, state_id, updated_by)
+VALUES (1, 'pre-trip', 'system')
+ON CONFLICT (id) DO NOTHING;

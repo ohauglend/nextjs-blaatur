@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TRIP_STATES, TripState } from '@/data/states';
-import { saveCurrentState } from '@/utils/stateManager';
+import { updateStateViaAPI } from '@/utils/stateManager';
 
 interface StateControlProps {
   currentState: TripState;
@@ -11,25 +11,32 @@ interface StateControlProps {
 export default function StateControl({ currentState }: StateControlProps) {
   const [selectedState, setSelectedState] = useState<TripState>(currentState);
   const [isChanging, setIsChanging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleStateChange = async (newState: TripState) => {
     if (newState === currentState) return;
     
     setIsChanging(true);
+    setError(null);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Call the API to update the state
+      const result = await updateStateViaAPI(newState, 'host');
       
-      // Save the new state to localStorage (in production this would be an API call)
-      saveCurrentState(newState);
-      console.log(`State changed from ${currentState} to ${newState}`);
-      
-      // Refresh the page to show the new state
-      window.location.reload();
+      if (result.success) {
+        console.log(`State changed from ${currentState} to ${newState}`);
+        
+        // Refresh the page to show the new state
+        // Note: With the polling in useCurrentState, this might not be necessary
+        // but we do it to ensure immediate update
+        window.location.reload();
+      } else {
+        setError(result.error || 'Failed to change state');
+        console.error('Failed to change state:', result.error);
+      }
     } catch (error) {
       console.error('Failed to change state:', error);
-      alert('Failed to change state. Please try again.');
+      setError('Network error - please try again');
     } finally {
       setIsChanging(false);
     }
@@ -109,9 +116,17 @@ export default function StateControl({ currentState }: StateControlProps) {
         </button>
       </div>
 
-      <div className="mt-4 p-3 bg-gray-50 rounded text-xs text-gray-600">
-        <p><strong>Note:</strong> In production, this would update a database/API that all participant screens read from.</p>
-        <p>For this demo, the state change simulates the update and refreshes the page.</p>
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+          <p className="text-red-800 text-sm flex items-center">
+            <span className="mr-2">❌</span>
+            <strong>Error:</strong> {error}
+          </p>
+        </div>
+      )}
+
+      <div className="mt-4 p-3 bg-blue-50 rounded text-xs text-gray-700">
+        <p><strong>✓ API-Managed State:</strong> State changes are now stored in the database and automatically sync to all participant screens within 10 seconds.</p>
       </div>
     </div>
   );
