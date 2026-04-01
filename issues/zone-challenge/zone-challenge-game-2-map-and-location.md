@@ -98,7 +98,7 @@ The hook returned from `useParticipantLocation` should:
 1. If `NEXT_PUBLIC_MOCK_LOCATION === 'true'`, immediately return the mock coordinate for this participant. No GPS call.
 2. Otherwise, call `navigator.geolocation.watchPosition()`, update on each position change, and clean up on unmount.
 3. On GPS permission denied: return a descriptive error string (displayed in UI, not thrown).
-4. On each position update (real or mock), push the location to the server: `POST /api/locations` with `{ participant_id, team_color, lat, lng, accuracy }`. This upserts the `team_locations` table (from Issue #1) so that the host dashboard can show all team dots in real time.
+4. On each position update (real or mock), push the location to the server: `POST /api/locations` with `{ participant_id, team_color, lat, lng, accuracy }`. This upserts the `participant_locations` table (from Issue #1) so that the host dashboard can show all participant dots in real time.
 5. Throttle server pushes to at most once every 15 seconds to avoid excessive requests.
 
 ### Zone Map Component

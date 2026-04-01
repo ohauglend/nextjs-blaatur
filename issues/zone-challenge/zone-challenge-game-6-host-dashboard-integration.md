@@ -62,7 +62,7 @@ Same `ZoneMap` component used by participants, but with one difference:
 - Hosts see every participant's GPS dot in their team color
 - This allows hosts to spot any technical issues or verify if a team is genuinely near a zone
 
-To support this: `ZoneMap` gains an optional prop `showAllLocations: boolean`. When true, it fetches `GET /api/locations` (polling every 10 seconds) which returns all participants' last known positions from the `team_locations` table (populated by Issue #2's location push in `useParticipantLocation`). Each dot is rendered as a `CircleMarker` in the participant's team color with a small label showing the participant name.
+To support this: `ZoneMap` gains an optional prop `showAllLocations: boolean`. When true, it fetches `GET /api/locations` (polling every 10 seconds) which returns all participants' last known positions from the `participant_locations` table (populated by Issue #2's location push in `useParticipantLocation`). Each dot is rendered as a `CircleMarker` in the participant's team color with a small label showing the participant name.
 
 #### 2. Scoreboard Table
 
@@ -171,7 +171,7 @@ These should be manually verified before considering the full feature complete:
 - [ ] Host dashboard has Zone Game section with scoreboard + transition button + challenge review panel
 - [ ] Host can withdraw a point from a completed challenge via the review panel
 - [ ] Withdrawn point correctly decrements team score and re-opens zone for retry
-- [ ] Host map shows all participant GPS dots from `team_locations` table
+- [ ] Host map shows all participant GPS dots from `participant_locations` table
 - [ ] Merge preview is correct before transition
 - [ ] "Reset claims" dev button works and clears DB fully
 - [ ] End-to-end Scenario A passes (Day 1 full run)
