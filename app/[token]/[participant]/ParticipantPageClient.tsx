@@ -2,7 +2,8 @@
 
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { isValidParticipant, getParticipant } from '@/utils/participantUtils';
+import dynamic from 'next/dynamic';
+import { isValidParticipant, getParticipant, getParticipantTeamColor } from '@/utils/participantUtils';
 import { PACKING_LISTS } from '@/data/packing-lists';
 import { PARTICIPANT_ASSETS, getParticipantAssets } from '@/data/participant-assets';
 import { useCurrentState } from '@/hooks/useCurrentState';
@@ -15,6 +16,8 @@ import VotingInterface from '@/components/VotingInterface';
 import TeamActivity from '@/components/TeamActivity';
 import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
+
+const ZoneMap = dynamic(() => import('@/components/ZoneMap'), { ssr: false });
 
 interface ParticipantPageClientProps {
   participantId: string;
@@ -84,6 +87,13 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
           {/* Day 1 */}
           {currentState === 'day-1' && (
             <>
+              {getParticipantTeamColor(participantId, 'day1') && (
+                <ZoneMap
+                  participantId={participantId}
+                  teamColor={getParticipantTeamColor(participantId, 'day1')!}
+                  phase="day1"
+                />
+              )}
               <TeamActivity participantId={participantId} day={1} />
               <VotingInterface participantId={participantId} />
             </>
@@ -92,6 +102,13 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
           {/* Day 2 */}
           {currentState === 'day-2' && (
             <>
+              {getParticipantTeamColor(participantId, 'day2') && (
+                <ZoneMap
+                  participantId={participantId}
+                  teamColor={getParticipantTeamColor(participantId, 'day2')!}
+                  phase="day2"
+                />
+              )}
               <TeamActivity participantId={participantId} day={2} />
               <VotingInterface participantId={participantId} />
             </>

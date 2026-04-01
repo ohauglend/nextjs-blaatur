@@ -3,8 +3,8 @@ import { DestinationGuessService } from '@/lib/db';
 import { isValidParticipant } from '@/utils/participantUtils';
 
 export async function POST(request: NextRequest) {
-  // For local development, simulate success without database
-  if (process.env.NODE_ENV === 'development') {
+  // No database: simulate success
+  if (!process.env.DATABASE_URL) {
     const body = await request.json();
     const { participantId, cityName, country, latitude, longitude } = body;
 
@@ -16,10 +16,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Simulate successful response for local testing
     return NextResponse.json({
       success: true,
-      message: 'Local development mode - guess would be saved in production',
       guess: {
         id: Math.floor(Math.random() * 1000),
         participant_id: participantId,
@@ -34,14 +32,6 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString()
       }
     });
-  }
-
-  // Check if we have database connection
-  if (!process.env.DATABASE_URL) {
-    return NextResponse.json(
-      { error: 'Database not yet configured. This feature will work after deployment to Vercel.' },
-      { status: 503 }
-    );
   }
 
   try {
@@ -100,48 +90,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  // For local development, return sample data
-  if (process.env.NODE_ENV === 'development') {
-    return NextResponse.json({
-      success: true,
-      message: 'Local development mode - showing sample data',
-      guesses: [
-        {
-          id: 1,
-          participant_id: 'emilie',
-          guess: null,
-          city_name: 'Prague',
-          country: 'Czech Republic',
-          latitude: 50.0755,
-          longitude: 14.4378,
-          is_active: true,
-          distance_km: null,
-          is_correct_destination: false,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 2,
-          participant_id: 'mathias',
-          guess: null,
-          city_name: 'Barcelona',
-          country: 'Spain',
-          latitude: 41.3851,
-          longitude: 2.1734,
-          is_active: true,
-          distance_km: null,
-          is_correct_destination: false,
-          created_at: new Date().toISOString()
-        }
-      ]
-    });
-  }
-
-  // Check if we have database connection
+  // No database: return empty list
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json(
-      { error: 'Database not yet configured. This feature will work after deployment to Vercel.' },
-      { status: 503 }
-    );
+    return NextResponse.json({ success: true, guesses: [] });
   }
 
   try {

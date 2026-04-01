@@ -6,6 +6,9 @@ This is the second of six issues for the Riga Zone Challenge Game. It implements
 
 **Prerequisite**: Issue #1 (database and types) must be complete. This issue reads from the `zones` and `zone_claims` tables seeded in Issue #1.
 
+## TODO: ask for clarifications
+- **Proximity bypass in dev mode**: In development (`NEXT_PUBLIC_MOCK_LOCATION=true`), all zone circles should be claimable regardless of the participant's location — i.e. the server-side proximity check in `POST /api/zones/[id]/claim` should be skipped. This bypass must be implemented in Issue #3 when the claim route is created, using `NEXT_PUBLIC_MOCK_LOCATION` as the bypass flag.
+
 ## Current State
 
 No map component exists in the codebase. The participant page (`ParticipantPageClient.tsx`) renders state-gated content but has no map functionality.
