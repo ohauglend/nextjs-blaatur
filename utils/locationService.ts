@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getParticipantTeamColor } from '@/utils/participantUtils';
 
 export interface LocationCoords {
   lat: number;
@@ -42,15 +43,32 @@ export function useParticipantLocation(participantId: string): {
   const [loading, setLoading] = useState(true);
   const lastPushRef = useRef<number>(0);
 
-  // TODO: Implement POST /api/locations to upsert participant_locations table.
-  // For now this is a no-op. Will be wired up in a later issue.
-  const pushLocation = useCallback(async (_coords: LocationCoords) => {
+  // Push participant location to the server, throttled to PUSH_THROTTLE_MS.
+  // Uses the day1 team color as a stable identifier for the locations table.
+  const pushLocation = useCallback(async (coords: LocationCoords) => {
     const now = Date.now();
     if (now - lastPushRef.current < PUSH_THROTTLE_MS) return;
     lastPushRef.current = now;
 
-    // TODO: POST /api/locations with { participant_id, team_color, lat, lng, accuracy }
-  }, []);
+    const teamColor = getParticipantTeamColor(participantId, 'day1');
+    if (!teamColor) return; // unknown participant — skip
+
+    try {
+      await fetch('/api/locations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          participant_id: participantId,
+          team_color: teamColor,
+          lat: coords.lat,
+          lng: coords.lng,
+          accuracy: coords.accuracy ?? null,
+        }),
+      });
+    } catch {
+      // Best-effort — location push failure should not surface to the user
+    }
+  }, [participantId]);
 
   useEffect(() => {
     // Mock mode — return hardcoded coordinates immediately
