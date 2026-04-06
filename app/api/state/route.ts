@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { TripState, TRIP_STATES } from '@/data/states';
 
-const sql = neon(process.env.DATABASE_URL!);
-
 /**
  * GET /api/state
  * Returns the current trip state
@@ -12,11 +10,13 @@ export async function GET() {
   // For local development without database
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({
-      state_id: 'pre-trip',
+      state_id: 'day-1',
       updated_at: new Date().toISOString(),
       updated_by: 'system'
     });
   }
+
+  const sql = neon(process.env.DATABASE_URL);
 
   try {
     const result = await sql`
@@ -72,6 +72,8 @@ export async function PUT(request: NextRequest) {
       }
     });
   }
+
+  const sql = neon(process.env.DATABASE_URL);
 
   try {
     const body = await request.json();

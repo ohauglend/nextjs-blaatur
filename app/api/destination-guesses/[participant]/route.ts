@@ -12,37 +12,14 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ) {
-  // For local development, return sample data for the participant
-  if (process.env.NODE_ENV === 'development') {
+  // No database: return empty data
+  if (!process.env.DATABASE_URL) {
     const { participant } = await context.params;
-    
+
     return NextResponse.json({
       success: true,
-      message: 'Local development mode - showing sample data for participant',
-      data: [
-        {
-          id: 1,
-          participant_id: participant,
-          guess: null,
-          city_name: 'Prague',
-          country: 'Czech Republic',
-          latitude: 50.0755,
-          longitude: 14.4378,
-          is_active: true,
-          distance_km: null,
-          is_correct_destination: false,
-          created_at: new Date().toISOString()
-        }
-      ]
+      data: []
     });
-  }
-
-  // Check if we have database connection
-  if (!process.env.DATABASE_URL) {
-    return NextResponse.json(
-      { error: 'Database not configured. Please set up DATABASE_URL environment variable.' },
-      { status: 503 }
-    );
   }
 
   try {

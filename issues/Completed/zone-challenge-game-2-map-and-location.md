@@ -6,6 +6,9 @@ This is the second of six issues for the Riga Zone Challenge Game. It implements
 
 **Prerequisite**: Issue #1 (database and types) must be complete. This issue reads from the `zones` and `zone_claims` tables seeded in Issue #1.
 
+## TODO: ask for clarifications
+- **Proximity bypass in dev mode**: In development (`NEXT_PUBLIC_MOCK_LOCATION=true`), all zone circles should be claimable regardless of the participant's location — i.e. the server-side proximity check in `POST /api/zones/[id]/claim` should be skipped. This bypass must be implemented in Issue #3 when the claim route is created, using `NEXT_PUBLIC_MOCK_LOCATION` as the bypass flag.
+
 ## Current State
 
 No map component exists in the codebase. The participant page (`ParticipantPageClient.tsx`) renders state-gated content but has no map functionality.
@@ -98,7 +101,7 @@ The hook returned from `useParticipantLocation` should:
 1. If `NEXT_PUBLIC_MOCK_LOCATION === 'true'`, immediately return the mock coordinate for this participant. No GPS call.
 2. Otherwise, call `navigator.geolocation.watchPosition()`, update on each position change, and clean up on unmount.
 3. On GPS permission denied: return a descriptive error string (displayed in UI, not thrown).
-4. On each position update (real or mock), push the location to the server: `POST /api/locations` with `{ participant_id, team_color, lat, lng, accuracy }`. This upserts the `team_locations` table (from Issue #1) so that the host dashboard can show all team dots in real time.
+4. On each position update (real or mock), push the location to the server: `POST /api/locations` with `{ participant_id, team_color, lat, lng, accuracy }`. This upserts the `participant_locations` table (from Issue #1) so that the host dashboard can show all participant dots in real time.
 5. Throttle server pushes to at most once every 15 seconds to avoid excessive requests.
 
 ### Zone Map Component

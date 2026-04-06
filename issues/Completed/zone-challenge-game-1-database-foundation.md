@@ -74,22 +74,22 @@ Define zones, challenges, and zone claims in the database. Establish TypeScript 
 - `id` (SERIAL PRIMARY KEY)
 - `participant_id` (VARCHAR(50) NOT NULL) — References participant id
 - `day1_team_color` (VARCHAR(10) NOT NULL) — Team color from Day 1
-- `day2_team_color` (VARCHAR(10) NOT NULL CHECK (day2_team_color IN ('red', 'yellow'))) — Day 2 merged team (always resolves to 2 teams)
+- `day2_team_color` (VARCHAR(10) NOT NULL CHECK (day2_team_color IN ('red', 'yellow', 'blue', 'green'))) — Day 2 merged team color. Takes the color of the higher-ranked team in each merged pair.
 - `calculated_at` (TIMESTAMP WITH TIME ZONE DEFAULT NOW())
 
 **UNIQUE** on `participant_id` — each participant has exactly one Day 2 assignment.
 
-### Table 5: `team_locations`
+### Table 5: `participant_locations`
 
-**Purpose**: Store each participant's last known GPS position. Updated periodically by the client. Used by the host dashboard to show all team dots on a live map. The application is always-online, so this table is the source of truth for participant positions.
+**Purpose**: Store each participant's last known GPS position. One row per participant, upserted on each location update (~every 15 seconds). Used by the host dashboard to show all participant dots on a live map.
 
 **Columns**:
 - `id` (SERIAL PRIMARY KEY)
 - `participant_id` (VARCHAR(50) NOT NULL UNIQUE) — One row per participant, upserted on each location update
-- `team_color` (VARCHAR(10) NOT NULL)
+- `team_color` (VARCHAR(10) NOT NULL CHECK (team_color IN ('red', 'yellow', 'blue', 'green')))
 - `lat` (DECIMAL(10,8) NOT NULL)
 - `lng` (DECIMAL(11,8) NOT NULL)
-- `accuracy` (DECIMAL(10,2)) — GPS accuracy in metres, nullable
+- `accuracy` (DECIMAL(8,2)) — GPS accuracy in metres, nullable
 - `updated_at` (TIMESTAMP WITH TIME ZONE DEFAULT NOW())
 
 ### Table 6: `zone_claim_history`
@@ -105,8 +105,8 @@ Define zones, challenges, and zone claims in the database. Establish TypeScript 
 - `claimed_at` (TIMESTAMP WITH TIME ZONE NOT NULL)
 - `completed` (BOOLEAN NOT NULL DEFAULT false)
 - `points_awarded` (BOOLEAN NOT NULL DEFAULT false)
-- `stolen_by_team` (VARCHAR(10)) — Which team stole this zone, NULL if not stolen
-- `archived_at` (TIMESTAMP WITH TIME ZONE DEFAULT NOW())
+- `stolen_by_team` (VARCHAR(10) NOT NULL) — Which team stole this zone
+- `stolen_at` (TIMESTAMP WITH TIME ZONE DEFAULT NOW())
 
 ## TypeScript Interfaces
 
@@ -135,7 +135,8 @@ export interface Challenge {
   participant_scope: 'team' | 'one';
 }
 
-export interface TeamLocation {
+export interface ParticipantLocation {
+  id: number;
   participant_id: string;
   team_color: TeamColor;
   lat: number;
@@ -153,8 +154,8 @@ export interface ZoneClaimHistory {
   claimed_at: string;
   completed: boolean;
   points_awarded: boolean;
-  stolen_by_team: TeamColor | null;
-  archived_at: string;
+  stolen_by_team: TeamColor;
+  stolen_at: string;
 }
 
 export interface ZoneClaim {
@@ -178,7 +179,7 @@ export interface ZoneWithClaim extends Zone {
 export interface Day2TeamAssignment {
   participant_id: string;
   day1_team_color: TeamColor;
-  day2_team_color: 'red' | 'yellow';
+  day2_team_color: TeamColor;
 }
 ```
 
@@ -186,32 +187,30 @@ export interface Day2TeamAssignment {
 
 ### Riga Zones (15–20 zones)
 
-The following zones cover Riga Old Town (Vecrīga) and immediate surroundings. All coordinates are approximate centers; verify and adjust against OpenStreetMap before finalizing.
-
-<!-- TODO: ask for more context — verify these coordinates are accurate before using in production. Cross-check each against OpenStreetMap (openstreetmap.org) or Google Maps. The radius for each zone should also be reviewed — larger landmarks like Central Market may need 80–100m while a single bar entrance may stay at 50m. -->
+The following zones cover Riga Old Town (Vecrīga) and immediate surroundings. All coordinates verified against OpenStreetMap Nominatim (March 2026).
 
 ```sql
 INSERT INTO zones (name, center_lat, center_lng, radius_m) VALUES
-  ('Freedom Monument',          56.95120,  24.11330,  50),
-  ('Doma Cathedral',            56.94920,  24.10380,  60),
-  ('St. Peter''s Church',       56.94650,  24.10770,  50),
-  ('Riga Castle',               56.95030,  24.09920,  70),
-  ('Three Brothers',            56.94980,  24.10330,  40),
-  ('Swedish Gate',              56.95070,  24.10190,  40),
-  ('Powder Tower',              56.95200,  24.10660,  40),
-  ('Laima Clock',               56.95060,  24.11200,  40),
-  ('Livu Square',               56.94790,  24.10620,  60),
-  ('Bastejkalns Park',          56.95310,  24.10740,  80),
-  ('National Opera',            56.95070,  24.11050,  60),
-  ('Black Magic Bar',           56.94700,  24.10450,  40),
-  ('Riga Central Market',       56.94380,  24.11380, 100),
-  ('Vansu Bridge Viewpoint',    56.95600,  24.10200,  50),
-  ('Mentzendorff House',        56.94760,  24.10560,  40),
-  ('Cat House',                 56.94950,  24.10580,  40),
-  ('Konventa Seta',             56.94800,  24.10580,  50),
-  ('Riga Art Nouveau District', 56.95820,  24.12840,  80),
-  ('Esplanade Park',            56.95630,  24.11720,  80),
-  ('Daugava Riverbank',         56.94700,  24.09800,  80);
+  ('Freedom Monument',          56.95151,  24.11338,  50),
+  ('Doma Cathedral',            56.94910,  24.10477,  60),
+  ('St. Peter''s Church',       56.94752,  24.10931,  50),
+  ('Riga Castle',               56.95097,  24.10115,  70),
+  ('Three Brothers',            56.95035,  24.10429,  40),
+  ('Swedish Gate',              56.95145,  24.10638,  40),
+  ('Powder Tower',              56.95122,  24.10868,  40),
+  ('Laima Clock',               56.95044,  24.11198,  40),
+  ('Livu Square',               56.94944,  24.10930,  60),
+  ('Bastejkalns Park',          56.95155,  24.11112,  80),
+  ('National Opera',            56.94933,  24.11437,  60),
+  ('Black Magic Bar',           56.94866,  24.10892,  40),
+  ('Riga Central Market',       56.94396,  24.11673, 100),
+  ('Vansu Bridge Viewpoint',    56.95200,  24.10050,  50),
+  ('Mentzendorff House',        56.94677,  24.10825,  40),
+  ('Cat House',                 56.95018,  24.10854,  40),
+  ('Konventa Seta',             56.94824,  24.11033,  50),
+  ('Riga Art Nouveau District', 56.95961,  24.10852,  80),
+  ('Esplanade Park',            56.95428,  24.11338,  80),
+  ('Daugava Riverbank',         56.94680,  24.10200,  80);
 ```
 
 ### Challenges Seed
@@ -310,7 +309,7 @@ CREATE INDEX IF NOT EXISTS idx_zone_claims_zone_phase ON zone_claims(zone_id, ph
 CREATE INDEX IF NOT EXISTS idx_zone_claims_team ON zone_claims(team_color, phase);
 CREATE INDEX IF NOT EXISTS idx_challenges_zone_phase ON challenges(zone_id, phase);
 CREATE INDEX IF NOT EXISTS idx_day2_assignments_participant ON day2_team_assignments(participant_id);
-CREATE INDEX IF NOT EXISTS idx_team_locations_participant ON team_locations(participant_id);
+CREATE INDEX IF NOT EXISTS idx_participant_locations_participant ON participant_locations(participant_id);
 CREATE INDEX IF NOT EXISTS idx_zone_claim_history_zone ON zone_claim_history(zone_id, phase);
 ```
 
@@ -324,10 +323,14 @@ CREATE INDEX IF NOT EXISTS idx_zone_claim_history_zone ON zone_claim_history(zon
 - `data/teams.ts` — existing team structure is referenced by zone_claims, not modified
 - `data/participants.ts` — used as reference for participant IDs in claims
 
+## Database Provider
+
+This project uses **Neon Postgres** (`@neondatabase/serverless`) via `DATABASE_URL`, following the existing pattern in `lib/db.ts`. There is no Neon-to-VS-Code integration — SQL must be executed manually in the Neon dashboard.
+
 ## Definition of Done
 
-- [ ] All six tables created in Vercel Postgres without errors
-- [ ] 20 zones seeded with valid coordinates (verified on a map)
+- [ ] All six tables created in Neon Postgres without errors (executed manually in Neon dashboard)
+- [ ] 20 zones seeded with valid coordinates (verified against OpenStreetMap)
 - [ ] 40 challenges seeded (2 per zone × 20 zones), no missing entries
 - [ ] All Day 2 challenges are letter-based beverage challenges with correct `participant_scope`
 - [ ] TypeScript interfaces in `types/zones.ts` compile with no errors

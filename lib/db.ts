@@ -1,5 +1,12 @@
 import { neon } from '@neondatabase/serverless';
 
+function getDb() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  return neon(process.env.DATABASE_URL);
+}
+
 export interface DestinationGuess {
   id: number;
   participant_id: string;
@@ -14,14 +21,6 @@ export interface DestinationGuess {
   created_at: string;
 }
 
-// Validate DATABASE_URL exists
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL environment variable is not set');
-}
-
-// Initialize the Neon connection
-const sql = neon(process.env.DATABASE_URL!);
-
 export class DestinationGuessService {
   
   /**
@@ -35,6 +34,7 @@ export class DestinationGuessService {
     longitude: number,
     guess?: string
   ): Promise<DestinationGuess> {
+    const sql = getDb();
     try {
       console.log('DB: Deactivating existing guesses for participant:', participantId);
       
@@ -101,6 +101,7 @@ export class DestinationGuessService {
    * Get all destination guesses
    */
   static async getAllGuesses(): Promise<DestinationGuess[]> {
+    const sql = getDb();
     try {
       console.log('DB: Fetching all destination guesses');
       const result = await sql`
@@ -125,6 +126,7 @@ export class DestinationGuessService {
    * Get all guesses for a specific participant
    */
   static async getGuessesByParticipant(participantId: string): Promise<DestinationGuess[]> {
+    const sql = getDb();
     try {
       console.log('DB: Fetching guesses for participant:', participantId);
       const result = await sql`
@@ -151,6 +153,7 @@ export class DestinationGuessService {
    * Initialize database table (for development)
    */
   static async initializeTable(): Promise<void> {
+    const sql = getDb();
     try {
       await sql`
         CREATE TABLE IF NOT EXISTS destination_guesses (

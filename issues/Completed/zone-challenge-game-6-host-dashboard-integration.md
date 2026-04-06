@@ -62,7 +62,7 @@ Same `ZoneMap` component used by participants, but with one difference:
 - Hosts see every participant's GPS dot in their team color
 - This allows hosts to spot any technical issues or verify if a team is genuinely near a zone
 
-To support this: `ZoneMap` gains an optional prop `showAllLocations: boolean`. When true, it fetches `GET /api/locations` (polling every 10 seconds) which returns all participants' last known positions from the `team_locations` table (populated by Issue #2's location push in `useParticipantLocation`). Each dot is rendered as a `CircleMarker` in the participant's team color with a small label showing the participant name.
+To support this: `ZoneMap` gains an optional prop `showAllLocations: boolean`. When true, it fetches `GET /api/locations` (polling every 10 seconds) which returns all participants' last known positions from the `participant_locations` table (populated by Issue #2's location push in `useParticipantLocation`). Each dot is rendered as a `CircleMarker` in the participant's team color with a small label showing the participant name.
 
 #### 2. Scoreboard Table
 
@@ -89,6 +89,20 @@ A button: **"Start Day 2 — Merge Teams"**
 - Idempotent — if already transitioned, shows current assignments instead of button
 
 The Day 2 merge is triggered **manually** by the host pressing this button. It is not auto-triggered by state changes. This gives hosts full control over timing.
+
+#### 3b. Host Team Override
+
+After the Day 2 transition has been triggered, hosts can manually override team assignments if the automatic merge produced undesirable results.
+
+- A section appears below the transition result showing current Day 2 team compositions
+- Each participant row has a dropdown to reassign them to the other Day 2 team
+- **"Save Override"** button calls `POST /api/game/override-day2-teams` which:
+  1. Updates the `day2_team_assignments` rows for the affected participants
+  2. Returns the updated team compositions
+- Only available after transition (not before)
+- Override is idempotent — saving the same assignments is a no-op
+
+New API: `POST /api/game/override-day2-teams` (host-only) — accepts `{ participant_id: string, new_day2_team_color: TeamColor }[]` and updates the matching rows in `day2_team_assignments`.
 
 #### 4. Host Challenge Review & Point Withdrawal Panel
 
@@ -127,6 +141,7 @@ TRUNCATE day2_team_assignments;
 ### New Files
 - `app/api/zones/claims/reset/route.ts` — DELETE endpoint
 - `app/api/zones/[id]/withdraw/route.ts` — POST endpoint (host point withdrawal)
+- `app/api/game/override-day2-teams/route.ts` — POST endpoint (host team override)
 
 ### Modified Files
 - `app/[token]/[participant]/ParticipantPageClient.tsx` — gate game behind `day-1`/`day-2` states
@@ -171,8 +186,9 @@ These should be manually verified before considering the full feature complete:
 - [ ] Host dashboard has Zone Game section with scoreboard + transition button + challenge review panel
 - [ ] Host can withdraw a point from a completed challenge via the review panel
 - [ ] Withdrawn point correctly decrements team score and re-opens zone for retry
-- [ ] Host map shows all participant GPS dots from `team_locations` table
+- [ ] Host map shows all participant GPS dots from `participant_locations` table
 - [ ] Merge preview is correct before transition
+- [ ] Host can override Day 2 team assignments after transition
 - [ ] "Reset claims" dev button works and clears DB fully
 - [ ] End-to-end Scenario A passes (Day 1 full run)
 - [ ] End-to-end Scenario B passes (Day 2 steal + transition)
