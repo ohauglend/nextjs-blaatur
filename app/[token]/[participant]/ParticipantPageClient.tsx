@@ -1,11 +1,11 @@
 'use client';
 
+import { useState, useCallback, useRef } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { isValidParticipant, getParticipant, getParticipantTeamColor } from '@/utils/participantUtils';
 import { PACKING_LISTS } from '@/data/packing-lists';
-import { PARTICIPANT_ASSETS, getParticipantAssets } from '@/data/participant-assets';
 import { useCurrentState } from '@/hooks/useCurrentState';
 import { getParticipantToken } from '@/utils/secureAccess';
 import ParticipantHeader from '@/components/ParticipantHeader';
@@ -16,6 +16,9 @@ import VotingInterface from '@/components/VotingInterface';
 import TeamActivity from '@/components/TeamActivity';
 import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
+import TeamScoreHeader from '@/components/TeamScoreHeader';
+import ZoneChallengePanel from '@/components/ZoneChallengePanel';
+import type { ZoneWithClaim } from '@/types/zones';
 
 const ZoneMap = dynamic(() => import('@/components/ZoneMap'), { ssr: false });
 
@@ -31,8 +34,40 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
   const participant = getParticipant(participantId);
   const currentState = useCurrentState();
   const packingList = PACKING_LISTS[participantId];
-  const assets = getParticipantAssets(participantId);
   const token = getParticipantToken(participantId);
+
+  // Zone challenge panel state
+  const [selectedZone, setSelectedZone] = useState<ZoneWithClaim | null>(null);
+  // Dev-mode GPS override (click map to set)
+  const [devPosition, setDevPosition] = useState<{ lat: number; lng: number } | null>(null);
+  // Dev-mode GPS click toggle
+  const [devGpsActive, setDevGpsActive] = useState(false);
+  // Ref to zone SWR mutate function (set by ZoneMap via callback)
+  const zoneMutateRef = useRef<(() => void) | null>(null);
+
+  const handleZoneTap = useCallback((zone: ZoneWithClaim) => {
+    setSelectedZone(zone);
+  }, []);
+
+  const handleMutateRef = useCallback((mutate: () => void) => {
+    zoneMutateRef.current = mutate;
+  }, []);
+
+  const handleClaimSuccess = useCallback(() => {
+    zoneMutateRef.current?.();
+  }, []);
+
+  const handleCompleteSuccess = useCallback(() => {
+    zoneMutateRef.current?.();
+  }, []);
+
+  const handleDevPositionSet = useCallback((coords: { lat: number; lng: number }) => {
+    setDevPosition(coords);
+  }, []);
+
+  const handleDevGpsToggle = useCallback(() => {
+    setDevGpsActive((prev) => !prev);
+  }, []);
 
   // All participants see state-based content
   return (
@@ -88,11 +123,35 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
           {currentState === 'day-1' && (
             <>
               {getParticipantTeamColor(participantId, 'day1') && (
-                <ZoneMap
-                  participantId={participantId}
-                  teamColor={getParticipantTeamColor(participantId, 'day1')!}
-                  phase="day1"
-                />
+                <>
+                  <TeamScoreHeader
+                    teamColor={getParticipantTeamColor(participantId, 'day1')!}
+                    phase="day1"
+                  />
+                  <ZoneMap
+                    participantId={participantId}
+                    teamColor={getParticipantTeamColor(participantId, 'day1')!}
+                    phase="day1"
+                    onZoneTap={handleZoneTap}
+                    onMutateRef={handleMutateRef}
+                    onDevPositionSet={handleDevPositionSet}
+                    devPosition={devPosition}
+                    devGpsActive={devGpsActive}
+                    onDevGpsToggle={handleDevGpsToggle}
+                  />
+                  {selectedZone && (
+                    <ZoneChallengePanel
+                      zone={selectedZone}
+                      participantId={participantId}
+                      teamColor={getParticipantTeamColor(participantId, 'day1')!}
+                      phase="day1"
+                      onClose={() => setSelectedZone(null)}
+                      onClaimSuccess={handleClaimSuccess}
+                      onCompleteSuccess={handleCompleteSuccess}
+                      devPosition={devPosition}
+                    />
+                  )}
+                </>
               )}
               <TeamActivity participantId={participantId} day={1} />
               <VotingInterface participantId={participantId} />
@@ -103,11 +162,35 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
           {currentState === 'day-2' && (
             <>
               {getParticipantTeamColor(participantId, 'day2') && (
-                <ZoneMap
-                  participantId={participantId}
-                  teamColor={getParticipantTeamColor(participantId, 'day2')!}
-                  phase="day2"
-                />
+                <>
+                  <TeamScoreHeader
+                    teamColor={getParticipantTeamColor(participantId, 'day2')!}
+                    phase="day2"
+                  />
+                  <ZoneMap
+                    participantId={participantId}
+                    teamColor={getParticipantTeamColor(participantId, 'day2')!}
+                    phase="day2"
+                    onZoneTap={handleZoneTap}
+                    onMutateRef={handleMutateRef}
+                    onDevPositionSet={handleDevPositionSet}
+                    devPosition={devPosition}
+                    devGpsActive={devGpsActive}
+                    onDevGpsToggle={handleDevGpsToggle}
+                  />
+                  {selectedZone && (
+                    <ZoneChallengePanel
+                      zone={selectedZone}
+                      participantId={participantId}
+                      teamColor={getParticipantTeamColor(participantId, 'day2')!}
+                      phase="day2"
+                      onClose={() => setSelectedZone(null)}
+                      onClaimSuccess={handleClaimSuccess}
+                      onCompleteSuccess={handleCompleteSuccess}
+                      devPosition={devPosition}
+                    />
+                  )}
+                </>
               )}
               <TeamActivity participantId={participantId} day={2} />
               <VotingInterface participantId={participantId} />
@@ -131,7 +214,6 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
               <p>Current State: <span className="font-mono bg-gray-200 px-1 rounded">{currentState}</span></p>
               <p>Participant Role: <span className="font-mono bg-gray-200 px-1 rounded">{participant.role}</span></p>
               <p>Has Packing List: <span className="font-mono bg-gray-200 px-1 rounded">{packingList ? 'Yes' : 'No'}</span></p>
-              <p>Has Assets: <span className="font-mono bg-gray-200 px-1 rounded">{assets ? 'Yes' : 'No'}</span></p>
             </div>
           )}
         </div>

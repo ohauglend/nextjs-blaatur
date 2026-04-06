@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import useSWR from 'swr';
+import L from 'leaflet';
 import {
   MapContainer,
   TileLayer,
@@ -9,6 +10,7 @@ import {
   CircleMarker,
   Tooltip,
   useMap,
+  useMapEvents,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { TeamColor, ZoneWithClaim } from '@/types/zones';
@@ -95,6 +97,47 @@ interface ZoneMapProps {
   phase: 'day1' | 'day2';
   height?: string;
   width?: string;
+  onZoneTap?: (zone: ZoneWithClaim) => void;
+  /** Called once after first render so parent can trigger SWR revalidation */
+  onMutateRef?: (mutate: () => void) => void;
+  /** In dev mode, called when user clicks the map to set a fake GPS position */
+  onDevPositionSet?: (coords: { lat: number; lng: number }) => void;
+  /** Dev-mode override position shown on the map */
+  devPosition?: { lat: number; lng: number } | null;
+  /** Whether dev GPS click-to-pin mode is active */
+  devGpsActive?: boolean;
+  /** Called when the dev GPS toggle button is clicked */
+  onDevGpsToggle?: () => void;
+}
+
+// -- Sub-component: dev-mode map click to set position ----------------------
+
+function DevMapClickHandler({ onClickMap }: { onClickMap: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onClickMap(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+// -- Sub-component: dev GPS toggle button (outside the map, no Leaflet interference) --
+
+function DevGpsToggle({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      title={active ? 'Dev GPS mode ON — click map to move pin' : 'Dev GPS mode OFF'}
+      style={{ position: 'absolute', bottom: 88, right: 12, zIndex: 1000 }}
+      className={`px-2.5 py-1.5 rounded-lg shadow text-xs font-semibold border transition-colors ${
+        active
+          ? 'bg-orange-500 border-orange-600 text-white'
+          : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+      }`}
+    >
+      📍 {active ? 'GPS: ON' : 'GPS: OFF'}
+    </button>
+  );
 }
 
 export default function ZoneMap({
@@ -103,19 +146,52 @@ export default function ZoneMap({
   phase,
   height = '85dvh',
   width = '100%',
+  onZoneTap,
+  onMutateRef,
+  onDevPositionSet,
+  devPosition,
+  devGpsActive = false,
+  onDevGpsToggle,
 }: ZoneMapProps) {
   const { coords, error: locationError, loading: locationLoading } = useParticipantLocation(participantId);
 
-  const { data: zones, error: fetchError, isLoading: zonesLoading } = useSWR<ZoneWithClaim[]>(
+  const { data: zones, error: fetchError, isLoading: zonesLoading, mutate } = useSWR<ZoneWithClaim[]>(
     `/api/zones/claims?phase=${phase}`,
     fetcher,
     { refreshInterval: 10_000 }
   );
 
+  // Expose mutate to parent
+  const mutateRefSet = useRef(false);
+  useEffect(() => {
+    if (onMutateRef && !mutateRefSet.current) {
+      mutateRefSet.current = true;
+      onMutateRef(() => { mutate(); });
+    }
+  }, [onMutateRef, mutate]);
+
+  const isDev = process.env.NODE_ENV === 'development';
+
+  // Destroy the Leaflet map instance on unmount so React StrictMode's
+  // double-invoke doesn't leave a stale _leaflet_id on the container DOM node.
+  const mapRef = useRef<L.Map | null>(null);
+  useEffect(() => {
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  const handleDevClick = useCallback((lat: number, lng: number) => {
+    if (isDev && onDevPositionSet) {
+      onDevPositionSet({ lat, lng });
+    }
+  }, [isDev, onDevPositionSet]);
+
   const myColor = TEAM_COLORS[teamColor];
 
   return (
-    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
+    <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg" style={{ position: 'relative' }}>
       {/* GPS error banner */}
       {locationError && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-amber-800 text-sm flex items-start gap-2">
@@ -145,6 +221,7 @@ export default function ZoneMap({
       {/* Map */}
       {!zonesLoading && (
         <MapContainer
+          ref={mapRef}
           center={RIGA_CENTER}
           zoom={DEFAULT_ZOOM}
           scrollWheelZoom={true}
@@ -159,6 +236,11 @@ export default function ZoneMap({
           <RecenterOnLocation coords={coords} />
 
           <ZoomControls />
+
+          {/* Dev mode: click-to-pin handler (only active when GPS mode is ON) */}
+          {isDev && devGpsActive && onDevPositionSet && (
+            <DevMapClickHandler onClickMap={handleDevClick} />
+          )}
 
           {/* Zone circles */}
           {zones?.map((zone) => {
@@ -177,6 +259,13 @@ export default function ZoneMap({
                   fillOpacity: 0.25,
                   weight: 2,
                   dashArray: isClaimed ? undefined : '6 4',
+                }}
+                eventHandlers={{
+                  click: (e) => {
+                    // Stop propagation so dev map-click doesn't also fire
+                    e.originalEvent.stopPropagation();
+                    onZoneTap?.(zone);
+                  },
                 }}
               >
                 {/* Zone name tooltip on click */}
@@ -205,13 +294,46 @@ export default function ZoneMap({
               </Tooltip>
             </CircleMarker>
           )}
+
+          {/* Dev-mode override position marker */}
+          {isDev && devPosition && (
+            <CircleMarker
+              center={[devPosition.lat, devPosition.lng]}
+              radius={10}
+              pathOptions={{
+                color: '#f97316',
+                fillColor: '#f97316',
+                fillOpacity: 0.8,
+                weight: 3,
+                dashArray: '4 2',
+              }}
+            >
+              <Tooltip direction="top" offset={[0, -12]} permanent>
+                📍 Dev GPS
+              </Tooltip>
+            </CircleMarker>
+          )}
         </MapContainer>
+      )}
+
+      {/* Dev GPS toggle button — outside MapContainer so Leaflet can't swallow the click */}
+      {isDev && onDevGpsToggle && (
+        <DevGpsToggle active={devGpsActive} onToggle={onDevGpsToggle} />
       )}
 
       {/* Location loading indicator */}
       {locationLoading && !locationError && (
         <div className="bg-blue-50 border-t border-blue-200 px-4 py-2 text-blue-700 text-xs text-center">
           Getting your location…
+        </div>
+      )}
+
+      {/* Dev mode GPS banner */}
+      {isDev && devGpsActive && (
+        <div className="bg-orange-50 border-t border-orange-200 px-4 py-2 text-orange-700 text-xs text-center">
+          {devPosition
+            ? `📍 Dev GPS: ${devPosition.lat.toFixed(5)}, ${devPosition.lng.toFixed(5)} — click map to move`
+            : '🗺️ Click anywhere on the map to place your dev GPS pin'}
         </div>
       )}
 

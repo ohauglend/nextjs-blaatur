@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZoneService } from '@/lib/zoneService';
-import { distanceMeters } from '@/utils/zoneUtils';
+import { distanceMeters, MOCK_ZONES } from '@/utils/zoneUtils';
 import { isValidParticipant } from '@/utils/participantUtils';
 import type { TeamColor, GamePhase } from '@/types/zones';
 
@@ -9,6 +9,7 @@ const MOCK_CHALLENGE = {
   id: 0,
   text: '[Mock] Take a team photo at this zone. Bonus points for dramatic poses.',
   type: 'geography',
+  participant_scope: 'team',
   zone_name: 'Mock Zone',
 };
 
@@ -64,11 +65,26 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid phase. Must be day1 or day2.' }, { status: 400 });
   }
 
-  // No database: return mock success
+  // No database: run proximity check against mock zone data, then return mock success
   if (!process.env.DATABASE_URL) {
+    const mockZone = MOCK_ZONES.find((z) => z.id === zoneId);
+    if (!mockZone) {
+      return NextResponse.json({ error: 'Zone not found' }, { status: 404 });
+    }
+
+    if (process.env.SKIP_LOCATION_CHECK !== 'true') {
+      const distance = distanceMeters(lat, lng, mockZone.center_lat, mockZone.center_lng);
+      if (distance > mockZone.radius_m) {
+        return NextResponse.json(
+          { error: 'too_far', distance_m: Math.round(distance * 10) / 10 },
+          { status: 400 },
+        );
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      challenge: { ...MOCK_CHALLENGE, zone_name: `Zone ${zoneId}` },
+      challenge: { ...MOCK_CHALLENGE, zone_name: mockZone.name },
     });
   }
 
@@ -114,6 +130,7 @@ export async function POST(
             id: challenge.id,
             text: challenge.text,
             type: challenge.type,
+            participant_scope: challenge.participant_scope,
             zone_name: zone.name,
           }
         : null,
