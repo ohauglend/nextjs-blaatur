@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import type { ZoneWithClaim, TeamColor, GamePhase, Day2TeamAssignment } from '@/types/zones';
 import { getMockLocation, type LocationCoords } from '@/utils/locationService';
 import { mapDay1ColorToDay2 } from '@/utils/gamePhaseUtils';
@@ -50,8 +51,8 @@ interface ZoneChallengePanelProps {
   onClose: () => void;
   onClaimSuccess: () => void;
   onCompleteSuccess: () => void;
-  /** Dev-mode GPS override — used as coordinates when NEXT_PUBLIC_SKIP_LOCATION_CHECK is set */
-  devPosition?: { lat: number; lng: number } | null;
+  /** Manual GPS position set by participant on map (used when GPS override is active) */
+  manualPosition?: { lat: number; lng: number } | null;
   /** Day 2 team assignments — needed for steal mechanic */
   day2Assignments?: Day2TeamAssignment[] | null;
 }
@@ -82,7 +83,7 @@ export default function ZoneChallengePanel({
   onClose,
   onClaimSuccess,
   onCompleteSuccess,
-  devPosition,
+  manualPosition,
   day2Assignments,
 }: ZoneChallengePanelProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -101,7 +102,14 @@ export default function ZoneChallengePanel({
   // Track local completion state for optimistic UI
   const [localCompleted, setLocalCompleted] = useState(false);
 
-  const skipLocationCheck = process.env.NEXT_PUBLIC_SKIP_LOCATION_CHECK === 'true';
+  // When the host has enabled GPS override, use the participant's manually placed
+  // map pin instead of requesting real GPS coordinates.
+  const { data: gpsOverrideData } = useSWR<{ active: boolean }>(
+    '/api/dev/mock-location',
+    (url: string) => fetch(url).then((r) => r.json()),
+  );
+  const useManualGps = gpsOverrideData?.active === true;
+  console.log('[ZoneChallengePanel] useManualGps (gpsOverrideData?.active):', useManualGps);
 
   // Slide-up animation on mount
   useEffect(() => {
@@ -155,12 +163,11 @@ export default function ZoneChallengePanel({
 
     try {
       let coords: LocationCoords;
-      if (skipLocationCheck) {
-        // Env-var driven: use dev GPS pin if placed, otherwise Riga centre
-        coords = devPosition ?? getMockLocation(participantId);
-        console.log('[ZoneChallengePanel] skipLocationCheck=true, using coords:', coords, '(devPosition was:', devPosition, ')');
+      if (useManualGps) {
+        coords = manualPosition ?? getMockLocation(participantId);
+        console.log('[ZoneChallengePanel] using manual GPS coords:', coords, '(manualPosition was:', manualPosition, ')');
       } else {
-        console.log('[ZoneChallengePanel] skipLocationCheck=false, requesting real GPS...');
+        console.log('[ZoneChallengePanel] useManualGps=false, requesting real GPS...');
         coords = await getFreshPosition();
         console.log('[ZoneChallengePanel] real GPS coords:', coords);
       }
@@ -214,8 +221,8 @@ export default function ZoneChallengePanel({
 
     try {
       let coords: LocationCoords;
-      if (skipLocationCheck) {
-        coords = devPosition ?? getMockLocation(participantId);
+      if (useManualGps) {
+        coords = manualPosition ?? getMockLocation(participantId);
       } else {
         coords = await getFreshPosition();
       }
