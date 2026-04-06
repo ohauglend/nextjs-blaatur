@@ -13,8 +13,9 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { TeamColor, ZoneWithClaim } from '@/types/zones';
+import type { TeamColor, ZoneWithClaim, Day2TeamAssignment } from '@/types/zones';
 import { useParticipantLocation } from '@/utils/locationService';
+import { mapDay1ColorToDay2 } from '@/utils/gamePhaseUtils';
 
 // -- Color mapping -----------------------------------------------------------
 
@@ -27,8 +28,13 @@ const TEAM_COLORS: Record<TeamColor, string> = {
 
 const UNCLAIMED_COLOR = '#9ca3af';
 
-function getZoneColor(claim: ZoneWithClaim['claim']): string {
+function getZoneColor(claim: ZoneWithClaim['claim'], phase?: string, day2Assignments?: Day2TeamAssignment[] | null): string {
   if (!claim) return UNCLAIMED_COLOR;
+  // In Day 2, map the claim's team_color through day2_team_assignments
+  if (phase === 'day2' && day2Assignments && day2Assignments.length > 0) {
+    const day2Color = mapDay1ColorToDay2(claim.team_color, day2Assignments);
+    if (day2Color) return TEAM_COLORS[day2Color] ?? UNCLAIMED_COLOR;
+  }
   return TEAM_COLORS[claim.team_color] ?? UNCLAIMED_COLOR;
 }
 
@@ -108,6 +114,8 @@ interface ZoneMapProps {
   devGpsActive?: boolean;
   /** Called when the dev GPS toggle button is clicked */
   onDevGpsToggle?: () => void;
+  /** Day 2 team assignments for color mapping */
+  day2Assignments?: Day2TeamAssignment[] | null;
 }
 
 // -- Sub-component: dev-mode map click to set position ----------------------
@@ -152,6 +160,7 @@ export default function ZoneMap({
   devPosition,
   devGpsActive = false,
   onDevGpsToggle,
+  day2Assignments,
 }: ZoneMapProps) {
   const { coords, error: locationError, loading: locationLoading } = useParticipantLocation(participantId);
 
@@ -244,7 +253,7 @@ export default function ZoneMap({
 
           {/* Zone circles */}
           {zones?.map((zone) => {
-            const color = getZoneColor(zone.claim);
+            const color = getZoneColor(zone.claim, phase, day2Assignments);
             const isClaimed = !!zone.claim;
             const isCompleted = zone.claim?.completed === true;
 

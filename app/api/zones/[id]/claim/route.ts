@@ -106,31 +106,127 @@ export async function POST(
       }
     }
 
-    // 3. Already claimed for this zone+phase?
-    const existing = await ZoneService.getClaimForZonePhase(zoneId, phase as GamePhase);
-    if (existing) {
+    // 3. Phase-specific claim logic
+    if (phase === 'day1') {
+      // Day 1: simple claim — reject if already taken
+      const existing = await ZoneService.getClaimForZonePhase(zoneId, 'day1');
+      if (existing) {
+        return NextResponse.json(
+          { error: 'already_claimed', team_color: existing.team_color },
+          { status: 409 },
+        );
+      }
+
+      const { challenge } = await ZoneService.claimZone(
+        zoneId,
+        participant_id,
+        team_color as TeamColor,
+        'day1',
+      );
+
+      return NextResponse.json({
+        success: true,
+        challenge: challenge
+          ? {
+              id: challenge.id,
+              text: challenge.text,
+              type: challenge.type,
+              participant_scope: challenge.participant_scope,
+              zone_name: zone.name,
+            }
+          : null,
+      });
+    }
+
+    // --- Day 2 logic: fresh claim OR steal ---
+
+    // Look up the participant's Day 2 team assignment
+    const day2Assignments = await ZoneService.getDay2Assignments();
+    const myAssignment = day2Assignments.find((a) => a.participant_id === participant_id);
+    if (!myAssignment) {
       return NextResponse.json(
-        { error: 'already_claimed', team_color: existing.team_color },
+        { error: 'Day 2 transition has not occurred yet, or participant has no assignment' },
+        { status: 400 },
+      );
+    }
+    const myDay2Color = myAssignment.day2_team_color as TeamColor;
+
+    // Check for existing day2 claim on this zone
+    const existingDay2 = await ZoneService.getClaimForZonePhase(zoneId, 'day2');
+
+    if (!existingDay2) {
+      // Also check if there is a day1 claim that could be a steal target.
+      // Day 1 claims are in a separate phase row. In Day 2, if the zone has
+      // no day2 claim yet, it is available for a fresh day2 claim.
+      const { challenge } = await ZoneService.claimZone(
+        zoneId,
+        participant_id,
+        myDay2Color,
+        'day2',
+      );
+
+      return NextResponse.json({
+        success: true,
+        challenge: challenge
+          ? {
+              id: challenge.id,
+              text: challenge.text,
+              type: challenge.type,
+              participant_scope: challenge.participant_scope,
+              zone_name: zone.name,
+            }
+          : null,
+      });
+    }
+
+    // There IS an existing day2 claim — evaluate steal conditions
+
+    // Map the existing claim's team_color to its Day 2 merged color
+    const claimDay2Color =
+      day2Assignments.find((a) => a.day1_team_color === existingDay2.team_color)?.day2_team_color
+      ?? existingDay2.team_color;
+
+    // Own team cannot steal from itself
+    if (claimDay2Color === myDay2Color) {
+      return NextResponse.json(
+        { error: 'own_team', team_color: existingDay2.team_color },
         { status: 409 },
       );
     }
 
-    // 4. Insert claim
-    const { challenge } = await ZoneService.claimZone(
+    // Completed zones are immune
+    if (existingDay2.completed) {
+      return NextResponse.json(
+        { error: 'completed_immune', team_color: existingDay2.team_color },
+        { status: 409 },
+      );
+    }
+
+    // Already stolen once — permanently locked
+    if (existingDay2.steal_locked) {
+      return NextResponse.json(
+        { error: 'steal_locked', team_color: existingDay2.team_color },
+        { status: 409 },
+      );
+    }
+
+    // All checks pass — perform the steal
+    const { challenge: stealChallenge } = await ZoneService.stealZone(
       zoneId,
+      existingDay2,
       participant_id,
-      team_color as TeamColor,
-      phase as GamePhase,
+      myDay2Color,
     );
 
     return NextResponse.json({
       success: true,
-      challenge: challenge
+      stolen: true,
+      challenge: stealChallenge
         ? {
-            id: challenge.id,
-            text: challenge.text,
-            type: challenge.type,
-            participant_scope: challenge.participant_scope,
+            id: stealChallenge.id,
+            text: stealChallenge.text,
+            type: stealChallenge.type,
+            participant_scope: stealChallenge.participant_scope,
             zone_name: zone.name,
           }
         : null,

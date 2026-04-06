@@ -5,6 +5,7 @@ import type {
   ZoneWithClaim,
   Challenge,
   ParticipantLocation,
+  Day2TeamAssignment,
   TeamColor,
   GamePhase,
 } from '@/types/zones';
@@ -294,5 +295,155 @@ export class ZoneService {
       ORDER BY participant_id
     `;
     return rows as ParticipantLocation[];
+  }
+
+  // ---------------------------------------------------------------------------
+  // Day 2 Team Assignments
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Return all day2_team_assignments rows, or empty array if Day 2 hasn't started.
+   */
+  static async getDay2Assignments(): Promise<Day2TeamAssignment[]> {
+    const sql = getDb();
+    const rows = await sql`
+      SELECT participant_id, day1_team_color, day2_team_color
+      FROM day2_team_assignments
+      ORDER BY participant_id
+    `;
+    return rows as Day2TeamAssignment[];
+  }
+
+  /**
+   * Insert Day 2 team assignment rows. Returns the inserted rows.
+   * Should only be called if no existing assignments exist (caller checks idempotency).
+   * Note: Neon's tagged-template driver doesn't support multi-row dynamic VALUES,
+   * so we loop 8 inserts. Acceptable for a one-time operation.
+   */
+  static async insertDay2Assignments(
+    assignments: { participant_id: string; day1_team_color: TeamColor; day2_team_color: TeamColor }[],
+  ): Promise<Day2TeamAssignment[]> {
+    const sql = getDb();
+    const results: Day2TeamAssignment[] = [];
+    for (const a of assignments) {
+      const rows = await sql`
+        INSERT INTO day2_team_assignments (participant_id, day1_team_color, day2_team_color)
+        VALUES (${a.participant_id}, ${a.day1_team_color}, ${a.day2_team_color})
+        RETURNING participant_id, day1_team_color, day2_team_color
+      `;
+      results.push(rows[0] as Day2TeamAssignment);
+    }
+    return results;
+  }
+
+  /**
+   * Get Day 1 scores per team color (count of points_awarded = true in day1 phase).
+   */
+  static async getDay1ScoresPerTeam(): Promise<Record<TeamColor, number>> {
+    const sql = getDb();
+    const rows = await sql`
+      SELECT team_color, COUNT(*) AS points
+      FROM zone_claims
+      WHERE phase = 'day1' AND points_awarded = true
+      GROUP BY team_color
+    `;
+    const scores: Record<TeamColor, number> = { red: 0, yellow: 0, blue: 0, green: 0 };
+    for (const row of rows) {
+      scores[row.team_color as TeamColor] = Number(row.points);
+    }
+    return scores;
+  }
+
+  /**
+   * Get merged Day 2 scores: sum of points_awarded claims from both
+   * constituent Day 1 teams mapped through day2_team_assignments,
+   * PLUS any Day 2 phase claims that have points_awarded.
+   */
+  static async getDay2MergedScores(): Promise<Record<TeamColor, number>> {
+    const sql = getDb();
+
+    // Day 1 points mapped to Day 2 teams
+    const day1Rows = await sql`
+      SELECT
+        da.day2_team_color,
+        COUNT(zc.id) AS total_points
+      FROM day2_team_assignments da
+      JOIN zone_claims zc ON zc.team_color = da.day1_team_color
+      WHERE zc.points_awarded = true AND zc.phase = 'day1'
+      GROUP BY da.day2_team_color
+    `;
+
+    // Day 2 phase claims with points
+    const day2Rows = await sql`
+      SELECT team_color, COUNT(*) AS total_points
+      FROM zone_claims
+      WHERE phase = 'day2' AND points_awarded = true
+      GROUP BY team_color
+    `;
+
+    const scores: Record<TeamColor, number> = { red: 0, yellow: 0, blue: 0, green: 0 };
+    for (const row of day1Rows) {
+      scores[row.day2_team_color as TeamColor] += Number(row.total_points);
+    }
+    for (const row of day2Rows) {
+      scores[row.team_color as TeamColor] += Number(row.total_points);
+    }
+    return scores;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Steal
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Perform a steal: archive the existing claim, insert a new one for the stealing team.
+   * Returns the new claim and the Day 2 challenge for this zone.
+   * Caller must validate all steal preconditions before calling.
+   */
+  static async stealZone(
+    zoneId: number,
+    existingClaim: ZoneClaim,
+    stealerParticipantId: string,
+    stealerTeamColor: TeamColor,
+  ): Promise<{ claim: ZoneClaim; challenge: Challenge | null }> {
+    const sql = getDb();
+
+    // 1. Archive old claim into zone_claim_history
+    await sql`
+      INSERT INTO zone_claim_history
+        (zone_id, team_color, phase, claimed_by_participant, claimed_at,
+         completed, completed_at, points_awarded, stolen_by_team)
+      VALUES
+        (${existingClaim.zone_id}, ${existingClaim.team_color}, ${existingClaim.phase},
+         ${existingClaim.claimed_by_participant}, ${existingClaim.claimed_at},
+         ${existingClaim.completed}, ${existingClaim.completed_at},
+         ${existingClaim.points_awarded}, ${stealerTeamColor})
+    `;
+
+    // 2. Delete old claim
+    await sql`
+      DELETE FROM zone_claims WHERE id = ${existingClaim.id}
+    `;
+
+    // 3. Insert new claim with steal_locked = true
+    const claimRows = await sql`
+      INSERT INTO zone_claims
+        (zone_id, team_color, phase, claimed_by_participant, steal_locked, completed, points_awarded)
+      VALUES
+        (${zoneId}, ${stealerTeamColor}, 'day2', ${stealerParticipantId}, true, false, false)
+      RETURNING *
+    `;
+    const newClaim = claimRows[0] as ZoneClaim;
+
+    // 4. Get Day 2 challenge for this zone
+    const challengeRows = await sql`
+      SELECT id, zone_id, phase, text, type, participant_scope
+      FROM challenges
+      WHERE zone_id = ${zoneId} AND phase = 'day2'
+    `;
+    const challenge: Challenge | null =
+      challengeRows.length > 0 ? (challengeRows[0] as Challenge) : null;
+
+    return { claim: newClaim, challenge };
   }
 }

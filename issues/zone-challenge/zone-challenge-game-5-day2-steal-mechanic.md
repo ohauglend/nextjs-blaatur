@@ -44,7 +44,7 @@ Rank 2 = Red (3pts) + Rank 3 = Yellow (2pts) → Day 2 Red Team (5pts total)
 
 ### API: `POST /api/game/transition-to-day2`
 
-**Access**: Host-only (validate participant is a host via token before executing).
+**Access**: Host-only (validate participant_id's role is host — no token auth, just role check).
 
 **Actions**:
 1. Calculate Day 1 scores per team
@@ -71,6 +71,8 @@ Rank 2 = Red (3pts) + Rank 3 = Yellow (2pts) → Day 2 Red Team (5pts total)
 ```
 
 **Idempotency**: If `day2_team_assignments` already has rows, return the existing assignments rather than recalculating. Do not allow double-transition.
+
+> **Note (decided):** Hosts should be able to override/edit Day 2 team assignments — tracked in a separate issue. TODO: create the override-teams issue.
 
 ### Score Continuity
 

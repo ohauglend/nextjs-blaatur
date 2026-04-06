@@ -4,7 +4,9 @@ import { useState, useCallback, useRef } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import useSWR from 'swr';
 import { isValidParticipant, getParticipant, getParticipantTeamColor } from '@/utils/participantUtils';
+import { getTeamForPhase } from '@/utils/gamePhaseUtils';
 import { PACKING_LISTS } from '@/data/packing-lists';
 import { useCurrentState } from '@/hooks/useCurrentState';
 import { getParticipantToken } from '@/utils/secureAccess';
@@ -18,9 +20,11 @@ import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
 import TeamScoreHeader from '@/components/TeamScoreHeader';
 import ZoneChallengePanel from '@/components/ZoneChallengePanel';
-import type { ZoneWithClaim } from '@/types/zones';
+import type { ZoneWithClaim, Day2TeamAssignment } from '@/types/zones';
 
 const ZoneMap = dynamic(() => import('@/components/ZoneMap'), { ssr: false });
+
+const swrFetcher = (url: string) => fetch(url).then((r) => r.json());
 
 interface ParticipantPageClientProps {
   participantId: string;
@@ -44,6 +48,19 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
   const [devGpsActive, setDevGpsActive] = useState(false);
   // Ref to zone SWR mutate function (set by ZoneMap via callback)
   const zoneMutateRef = useRef<(() => void) | null>(null);
+
+  // Fetch Day 2 assignments (polled for phase awareness)
+  const { data: day2Data } = useSWR<{ assignments: Day2TeamAssignment[] }>(
+    currentState === 'day-2' ? '/api/game/day2-assignments' : null,
+    swrFetcher,
+    { refreshInterval: 30_000 },
+  );
+  const day2Assignments = day2Data?.assignments ?? null;
+
+  // Determine effective team color for the current phase
+  const day2TeamColor = day2Assignments
+    ? getTeamForPhase(participantId, 'day2', day2Assignments)
+    : null;
 
   const handleZoneTap = useCallback((zone: ZoneWithClaim) => {
     setSelectedZone(zone);
@@ -161,15 +178,16 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
           {/* Day 2 */}
           {currentState === 'day-2' && (
             <>
-              {getParticipantTeamColor(participantId, 'day2') && (
+              {(day2TeamColor ?? getParticipantTeamColor(participantId, 'day2')) && (
                 <>
                   <TeamScoreHeader
-                    teamColor={getParticipantTeamColor(participantId, 'day2')!}
+                    teamColor={(day2TeamColor ?? getParticipantTeamColor(participantId, 'day2'))!}
                     phase="day2"
+                    day2Assignments={day2Assignments}
                   />
                   <ZoneMap
                     participantId={participantId}
-                    teamColor={getParticipantTeamColor(participantId, 'day2')!}
+                    teamColor={(day2TeamColor ?? getParticipantTeamColor(participantId, 'day2'))!}
                     phase="day2"
                     onZoneTap={handleZoneTap}
                     onMutateRef={handleMutateRef}
@@ -177,17 +195,19 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                     devPosition={devPosition}
                     devGpsActive={devGpsActive}
                     onDevGpsToggle={handleDevGpsToggle}
+                    day2Assignments={day2Assignments}
                   />
                   {selectedZone && (
                     <ZoneChallengePanel
                       zone={selectedZone}
                       participantId={participantId}
-                      teamColor={getParticipantTeamColor(participantId, 'day2')!}
+                      teamColor={(day2TeamColor ?? getParticipantTeamColor(participantId, 'day2'))!}
                       phase="day2"
                       onClose={() => setSelectedZone(null)}
                       onClaimSuccess={handleClaimSuccess}
                       onCompleteSuccess={handleCompleteSuccess}
                       devPosition={devPosition}
+                      day2Assignments={day2Assignments}
                     />
                   )}
                 </>

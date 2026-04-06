@@ -12,6 +12,14 @@ export async function GET() {
 
   try {
     const scores = await ZoneService.getScores();
+
+    // Check if Day 2 transition has happened — if so, return merged Day 2 scores
+    const day2Assignments = await ZoneService.getDay2Assignments();
+    if (day2Assignments.length > 0) {
+      const mergedDay2 = await ZoneService.getDay2MergedScores();
+      scores.day2 = mergedDay2;
+    }
+
     return NextResponse.json(scores);
   } catch (error) {
     console.error('Error fetching scores:', error);
