@@ -158,8 +158,11 @@ export default function ZoneChallengePanel({
       if (skipLocationCheck) {
         // Env-var driven: use dev GPS pin if placed, otherwise Riga centre
         coords = devPosition ?? getMockLocation(participantId);
+        console.log('[ZoneChallengePanel] skipLocationCheck=true, using coords:', coords, '(devPosition was:', devPosition, ')');
       } else {
+        console.log('[ZoneChallengePanel] skipLocationCheck=false, requesting real GPS...');
         coords = await getFreshPosition();
+        console.log('[ZoneChallengePanel] real GPS coords:', coords);
       }
 
       const res = await fetch(`/api/zones/${zone.id}/claim`, {

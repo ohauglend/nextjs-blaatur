@@ -171,6 +171,19 @@ CREATE INDEX IF NOT EXISTS idx_participant_locations_participant ON participant_
 CREATE INDEX IF NOT EXISTS idx_zone_claim_history_zone ON zone_claim_history(zone_id, phase);
 
 -- =====================================================
+-- Dev Settings
+-- =====================================================
+-- Simple key/value store for host-controlled dev flags.
+-- Run this once on your Neon database.
+
+CREATE TABLE IF NOT EXISTS dev_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+INSERT INTO dev_settings (key, value) VALUES ('mock_gps_active', 'false') ON CONFLICT DO NOTHING;
+
+-- =====================================================
 -- Zone Challenge Game — Seed Data: Zones
 -- =====================================================
 -- 20 Riga zones, coordinates verified against OpenStreetMap (March 2026).

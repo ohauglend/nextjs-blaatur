@@ -189,7 +189,9 @@ export default function ZoneMap({
     { refreshInterval: 10_000 }
   );
 
-  const isDev = process.env.NODE_ENV === 'development';
+  // Show dev GPS features whenever the skip-location-check flag is set.
+  // This works both in local dev (.env.local) and on Vercel (env var in dashboard).
+  const isDev = process.env.NEXT_PUBLIC_SKIP_LOCATION_CHECK === 'true';
 
   // Destroy the Leaflet map instance on unmount so React StrictMode's
   // double-invoke doesn't leave a stale _leaflet_id on the container DOM node.
@@ -203,6 +205,7 @@ export default function ZoneMap({
 
   const handleDevClick = useCallback((lat: number, lng: number) => {
     if (isDev && onDevPositionSet) {
+      console.log('[ZoneMap] Dev GPS pin set:', lat, lng);
       onDevPositionSet({ lat, lng });
     }
   }, [isDev, onDevPositionSet]);
