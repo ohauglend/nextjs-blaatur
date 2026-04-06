@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import HostNavigation from './HostNavigation';
 import ZoneScoreboard from './ZoneScoreboard';
 import ZoneChallengeReview from './ZoneChallengeReview';
@@ -108,6 +109,15 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
         </div>
 
         <HostNavigation token={token} currentPage="zones" />
+
+        <div className="flex justify-end mb-4">
+          <Link
+            href={`/${token}/host/zones/challenges`}
+            className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm shadow-sm"
+          >
+            📝 Edit Challenges
+          </Link>
+        </div>
 
         <div className="space-y-6">
 

@@ -518,4 +518,75 @@ export class ZoneService {
     await sql`TRUNCATE day2_team_assignments`;
     await sql`TRUNCATE zone_claim_history`;
   }
+
+  // ---------------------------------------------------------------------------
+  // Challenges (host editor)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Return all challenges joined with their zone name,
+   * ordered by zone_id then phase (day1 before day2).
+   */
+  static async getAllChallengesWithZoneNames(): Promise<
+    Array<{
+      id: number;
+      zone_id: number;
+      zone_name: string;
+      phase: GamePhase;
+      text: string;
+      type: string;
+      participant_scope: string;
+    }>
+  > {
+    const sql = getDb();
+    const rows = await sql`
+      SELECT c.id, c.zone_id, z.name AS zone_name, c.phase, c.text, c.type, c.participant_scope
+      FROM challenges c
+      JOIN zones z ON c.zone_id = z.id
+      ORDER BY c.zone_id, c.phase DESC
+    `;
+    return rows as Array<{
+      id: number;
+      zone_id: number;
+      zone_name: string;
+      phase: GamePhase;
+      text: string;
+      type: string;
+      participant_scope: string;
+    }>;
+  }
+
+  /**
+   * Update challenge text only. Returns updated row with zone name, or null if not found.
+   */
+  static async updateChallenge(
+    id: number,
+    text: string,
+  ): Promise<{
+    id: number;
+    zone_id: number;
+    zone_name: string;
+    phase: GamePhase;
+    text: string;
+    type: string;
+    participant_scope: string;
+  } | null> {
+    const sql = getDb();
+    const rows = await sql`
+      UPDATE challenges SET text = ${text} WHERE id = ${id}
+      RETURNING id, zone_id, phase, text, type, participant_scope
+    `;
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    const zoneRows = await sql`SELECT name FROM zones WHERE id = ${r.zone_id}`;
+    return {
+      id: r.id,
+      zone_id: r.zone_id,
+      zone_name: zoneRows[0]?.name ?? '',
+      phase: r.phase as GamePhase,
+      text: r.text,
+      type: r.type,
+      participant_scope: r.participant_scope,
+    };
+  }
 }
