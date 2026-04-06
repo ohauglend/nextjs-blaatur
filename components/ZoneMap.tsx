@@ -13,7 +13,7 @@ import {
   useMapEvents,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { TeamColor, ZoneWithClaim, Day2TeamAssignment } from '@/types/zones';
+import type { TeamColor, ZoneWithClaim, Day2TeamAssignment, ParticipantLocation } from '@/types/zones';
 import { useParticipantLocation } from '@/utils/locationService';
 import { mapDay1ColorToDay2 } from '@/utils/gamePhaseUtils';
 
@@ -116,6 +116,8 @@ interface ZoneMapProps {
   onDevGpsToggle?: () => void;
   /** Day 2 team assignments for color mapping */
   day2Assignments?: Day2TeamAssignment[] | null;
+  /** Host view: show all participant location dots */
+  showAllLocations?: boolean;
 }
 
 // -- Sub-component: dev-mode map click to set position ----------------------
@@ -161,6 +163,7 @@ export default function ZoneMap({
   devGpsActive = false,
   onDevGpsToggle,
   day2Assignments,
+  showAllLocations = false,
 }: ZoneMapProps) {
   const { coords, error: locationError, loading: locationLoading } = useParticipantLocation(participantId);
 
@@ -178,6 +181,13 @@ export default function ZoneMap({
       onMutateRef(() => { mutate(); });
     }
   }, [onMutateRef, mutate]);
+
+  // Host view: poll all participant locations
+  const { data: allLocations } = useSWR<ParticipantLocation[]>(
+    showAllLocations ? '/api/locations' : null,
+    fetcher,
+    { refreshInterval: 10_000 }
+  );
 
   const isDev = process.env.NODE_ENV === 'development';
 
@@ -286,7 +296,7 @@ export default function ZoneMap({
           })}
 
           {/* Own location dot */}
-          {coords && (
+          {coords && !showAllLocations && (
             <CircleMarker
               center={[coords.lat, coords.lng]}
               radius={8}
@@ -303,6 +313,30 @@ export default function ZoneMap({
               </Tooltip>
             </CircleMarker>
           )}
+
+          {/* All participant location dots (host view) */}
+          {showAllLocations && allLocations?.map((loc) => {
+            const locColor = TEAM_COLORS[loc.team_color] ?? UNCLAIMED_COLOR;
+            const updatedAt = new Date(loc.updated_at).getTime();
+            const isStale = Date.now() - updatedAt > 5 * 60 * 1000; // 5 minutes
+            return (
+              <CircleMarker
+                key={loc.participant_id}
+                center={[loc.lat, loc.lng]}
+                radius={7}
+                pathOptions={{
+                  color: isStale ? '#9ca3af' : locColor,
+                  fillColor: isStale ? '#9ca3af' : locColor,
+                  fillOpacity: isStale ? 0.4 : 0.85,
+                  weight: 2,
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -10]} permanent>
+                  {loc.participant_id}{isStale ? ' ⏳' : ''}
+                </Tooltip>
+              </CircleMarker>
+            );
+          })}
 
           {/* Dev-mode override position marker */}
           {isDev && devPosition && (

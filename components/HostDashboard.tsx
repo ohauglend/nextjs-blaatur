@@ -61,8 +61,25 @@ export default function HostDashboard({ token }: HostDashboardProps) {
         </div>
 
         {/* Quick Access Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
+          {/* Zone Game Card */}
+          <Link
+            href={`/${token}/host/zones`}
+            className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all border-l-4 border-green-500"
+          >
+            <div className="text-4xl mb-4">🗺️</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Zone Game
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Live map with all teams, scoreboard, Day 2 transition, challenge review & dev controls
+            </p>
+            <div className="text-green-600 font-medium">
+              Open Zone Game →
+            </div>
+          </Link>
+
           {/* Preview Card */}
           <Link
             href={`/${token}/host/preview`}

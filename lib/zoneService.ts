@@ -446,4 +446,76 @@ export class ZoneService {
 
     return { claim: newClaim, challenge };
   }
+
+  // ---------------------------------------------------------------------------
+  // Host Admin
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Withdraw (delete) a zone claim, re-opening the zone for any team.
+   * Returns true if a row was deleted, false if no matching claim existed.
+   */
+  static async withdrawZoneClaim(
+    zoneId: number,
+    phase: GamePhase,
+  ): Promise<boolean> {
+    const sql = getDb();
+    const rows = await sql`
+      DELETE FROM zone_claims
+      WHERE zone_id = ${zoneId} AND phase = ${phase}
+      RETURNING id
+    `;
+    return rows.length > 0;
+  }
+
+  /**
+   * Return all completed zone claims with zone name and challenge text.
+   * Sorted by completed_at descending (most recent first).
+   */
+  static async getCompletedClaims(): Promise<Array<{
+    zone_id: number;
+    zone_name: string;
+    team_color: TeamColor;
+    phase: GamePhase;
+    challenge_text: string;
+    completed_at: string;
+    claimed_by_participant: string;
+  }>> {
+    const sql = getDb();
+    const rows = await sql`
+      SELECT
+        zc.zone_id,
+        z.name AS zone_name,
+        zc.team_color,
+        zc.phase,
+        ch.text AS challenge_text,
+        zc.completed_at,
+        zc.claimed_by_participant
+      FROM zone_claims zc
+      JOIN zones z ON z.id = zc.zone_id
+      LEFT JOIN challenges ch ON ch.zone_id = zc.zone_id AND ch.phase = zc.phase
+      WHERE zc.completed = true
+      ORDER BY zc.completed_at DESC
+    `;
+    return rows as Array<{
+      zone_id: number;
+      zone_name: string;
+      team_color: TeamColor;
+      phase: GamePhase;
+      challenge_text: string;
+      completed_at: string;
+      claimed_by_participant: string;
+    }>;
+  }
+
+  /**
+   * Reset all zone claims and Day 2 assignments. Used for dev/testing.
+   * Does NOT touch participant_locations.
+   */
+  static async resetAllClaims(): Promise<void> {
+    const sql = getDb();
+    await sql`TRUNCATE zone_claims`;
+    await sql`TRUNCATE day2_team_assignments`;
+    await sql`TRUNCATE zone_claim_history`;
+  }
 }

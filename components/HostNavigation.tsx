@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 interface HostNavigationProps {
   token: string;
-  currentPage: 'dashboard' | 'preview' | 'controls';
+  currentPage: 'dashboard' | 'preview' | 'controls' | 'zones';
 }
 
 export default function HostNavigation({ token, currentPage }: HostNavigationProps) {
@@ -43,6 +43,18 @@ export default function HostNavigation({ token, currentPage }: HostNavigationPro
         >
           <span className="mr-2">⚙️</span>
           Host Controls
+        </Link>
+        
+        <Link
+          href={`/${token}/host/zones`}
+          className={`px-6 py-2 rounded-lg font-medium transition-all ${
+            currentPage === 'zones'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          <span className="mr-2">🗺️</span>
+          Zone Game
         </Link>
       </nav>
     </div>
