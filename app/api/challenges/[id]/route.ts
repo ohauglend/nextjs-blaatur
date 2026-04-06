@@ -3,13 +3,14 @@ import { ZoneService } from '@/lib/zoneService';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  const id = Number(params.id);
+  const { id: idParam } = await params;
+  const id = Number(idParam);
   if (!Number.isInteger(id) || id < 1) {
     return NextResponse.json({ error: 'Invalid challenge id' }, { status: 400 });
   }
