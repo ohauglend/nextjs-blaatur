@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ZoneService } from '@/lib/zoneService';
+import { isHostToken } from '@/utils/hostAccess';
 
 export async function DELETE(request: NextRequest) {
-  // Access control: dev mode flag or host token (checked via participant_id in body)
-  if (process.env.NEXT_PUBLIC_DEV_MODE !== 'true') {
-    return NextResponse.json({ error: 'Reset only available in dev mode' }, { status: 403 });
+  const token = request.headers.get('x-host-token') ?? '';
+  if (!isHostToken(token)) {
+    return NextResponse.json({ error: 'Host access required' }, { status: 403 });
   }
 
   if (!process.env.DATABASE_URL) {

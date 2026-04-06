@@ -61,7 +61,7 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
 
   // Mock GPS server flag
   const { data: mockGpsData, mutate: mutateMockGps } = useSWR<{ active: boolean }>(
-    process.env.NEXT_PUBLIC_DEV_MODE === 'true' ? '/api/dev/mock-location' : null,
+    '/api/dev/mock-location',
     fetcher
   );
   const [togglingGps, setTogglingGps] = useState(false);
@@ -83,7 +83,7 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
     if (!confirm('Reset ALL zone claims and Day 2 assignments?\n\nThis cannot be undone. Zones will return to unclaimed state.')) return;
     setResetting(true);
     try {
-      await fetch('/api/zones/claims/reset', { method: 'DELETE' });
+      await fetch('/api/zones/claims/reset', { method: 'DELETE', headers: { 'x-host-token': token } });
       mutateAssignments();
     } finally {
       setResetting(false);
@@ -194,37 +194,35 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
           <ZoneChallengeReview hostParticipantId={hostParticipantId} />
 
           {/* ---- Dev Controls ---- */}
-          {process.env.NEXT_PUBLIC_DEV_MODE === 'true' && (
-            <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-orange-300">
-              <h2 className="text-xl font-bold text-orange-800 mb-4 flex items-center">
-                <span className="mr-2">🛠️</span>Dev Controls
-              </h2>
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={handleResetClaims}
-                  disabled={resetting}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
-                >
-                  {resetting ? 'Resetting…' : '🗑️ Reset All Zone Claims'}
-                </button>
+          <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-orange-300">
+            <h2 className="text-xl font-bold text-orange-800 mb-4 flex items-center">
+              <span className="mr-2">🛠️</span>Dev Controls
+            </h2>
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={handleResetClaims}
+                disabled={resetting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {resetting ? 'Resetting…' : '🗑️ Reset All Zone Claims'}
+              </button>
 
-                <button
-                  onClick={handleToggleMockGps}
-                  disabled={togglingGps}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    mockGpsData?.active
-                      ? 'bg-orange-500 text-white hover:bg-orange-600'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  } disabled:opacity-50`}
-                >
-                  {togglingGps ? 'Toggling…' : `📍 Mock GPS: ${mockGpsData?.active ? 'ON' : 'OFF'}`}
-                </button>
-              </div>
-              <p className="text-orange-700 text-xs mt-3">
-                Reset clears all zone_claims and day2_team_assignments. Mock GPS sets a server-side flag for all sessions.
-              </p>
+              <button
+                onClick={handleToggleMockGps}
+                disabled={togglingGps}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  mockGpsData?.active
+                    ? 'bg-orange-500 text-white hover:bg-orange-600'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                } disabled:opacity-50`}
+              >
+                {togglingGps ? 'Toggling…' : `📍 Mock GPS: ${mockGpsData?.active ? 'ON' : 'OFF'}`}
+              </button>
             </div>
-          )}
+            <p className="text-orange-700 text-xs mt-3">
+              Reset clears all zone_claims and day2_team_assignments. Mock GPS sets a server-side flag for all sessions.
+            </p>
+          </div>
         </div>
       </div>
     </div>
