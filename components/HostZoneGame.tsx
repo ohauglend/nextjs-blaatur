@@ -193,10 +193,10 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
           {/* ---- Challenge Review & Point Withdrawal ---- */}
           <ZoneChallengeReview hostParticipantId={hostParticipantId} />
 
-          {/* ---- Dev Controls ---- */}
+          {/* ---- Game Controls ---- */}
           <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-orange-300">
             <h2 className="text-xl font-bold text-orange-800 mb-4 flex items-center">
-              <span className="mr-2">🛠️</span>Dev Controls
+              <span className="mr-2">🛠️</span>Game Controls
             </h2>
             <div className="flex flex-wrap gap-4">
               <button
@@ -216,11 +216,11 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 } disabled:opacity-50`}
               >
-                {togglingGps ? 'Toggling…' : `📍 Mock GPS: ${mockGpsData?.active ? 'ON' : 'OFF'}`}
+                {togglingGps ? 'Toggling…' : `📍 GPS Override: ${mockGpsData?.active ? 'ON' : 'OFF'}`}
               </button>
             </div>
             <p className="text-orange-700 text-xs mt-3">
-              Reset clears all zone_claims and day2_team_assignments. Mock GPS sets a server-side flag for all sessions.
+              Reset clears all zone claims and Day 2 assignments. GPS Override enables manual position pinning on participant maps.
             </p>
           </div>
         </div>

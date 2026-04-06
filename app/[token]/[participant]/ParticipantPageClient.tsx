@@ -42,10 +42,10 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
 
   // Zone challenge panel state
   const [selectedZone, setSelectedZone] = useState<ZoneWithClaim | null>(null);
-  // Dev-mode GPS override (click map to set)
-  const [devPosition, setDevPosition] = useState<{ lat: number; lng: number } | null>(null);
-  // Dev-mode GPS click toggle
-  const [devGpsActive, setDevGpsActive] = useState(false);
+  // Manual GPS position — set by participant clicking the map (when GPS override is active)
+  const [manualPosition, setManualPosition] = useState<{ lat: number; lng: number } | null>(null);
+  // Whether the participant has turned on click-to-pin mode on the map
+  const [manualGpsActive, setManualGpsActive] = useState(false);
   // Ref to zone SWR mutate function (set by ZoneMap via callback)
   const zoneMutateRef = useRef<(() => void) | null>(null);
 
@@ -78,12 +78,12 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
     zoneMutateRef.current?.();
   }, []);
 
-  const handleDevPositionSet = useCallback((coords: { lat: number; lng: number }) => {
-    setDevPosition(coords);
+  const handleManualPositionSet = useCallback((coords: { lat: number; lng: number }) => {
+    setManualPosition(coords);
   }, []);
 
-  const handleDevGpsToggle = useCallback(() => {
-    setDevGpsActive((prev) => !prev);
+  const handleManualGpsToggle = useCallback(() => {
+    setManualGpsActive((prev) => !prev);
   }, []);
 
   // All participants see state-based content
@@ -151,10 +151,10 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                     phase="day1"
                     onZoneTap={handleZoneTap}
                     onMutateRef={handleMutateRef}
-                    onDevPositionSet={handleDevPositionSet}
-                    devPosition={devPosition}
-                    devGpsActive={devGpsActive}
-                    onDevGpsToggle={handleDevGpsToggle}
+                    onManualPositionSet={handleManualPositionSet}
+                    manualPosition={manualPosition}
+                    manualGpsActive={manualGpsActive}
+                    onManualGpsToggle={handleManualGpsToggle}
                   />
                   {selectedZone && (
                     <ZoneChallengePanel
@@ -165,7 +165,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                       onClose={() => setSelectedZone(null)}
                       onClaimSuccess={handleClaimSuccess}
                       onCompleteSuccess={handleCompleteSuccess}
-                      devPosition={devPosition}
+                      manualPosition={manualPosition}
                     />
                   )}
                 </>
@@ -191,10 +191,10 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                     phase="day2"
                     onZoneTap={handleZoneTap}
                     onMutateRef={handleMutateRef}
-                    onDevPositionSet={handleDevPositionSet}
-                    devPosition={devPosition}
-                    devGpsActive={devGpsActive}
-                    onDevGpsToggle={handleDevGpsToggle}
+                    onManualPositionSet={handleManualPositionSet}
+                    manualPosition={manualPosition}
+                    manualGpsActive={manualGpsActive}
+                    onManualGpsToggle={handleManualGpsToggle}
                     day2Assignments={day2Assignments}
                   />
                   {selectedZone && (
@@ -206,7 +206,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                       onClose={() => setSelectedZone(null)}
                       onClaimSuccess={handleClaimSuccess}
                       onCompleteSuccess={handleCompleteSuccess}
-                      devPosition={devPosition}
+                      manualPosition={manualPosition}
                       day2Assignments={day2Assignments}
                     />
                   )}

@@ -106,23 +106,23 @@ interface ZoneMapProps {
   onZoneTap?: (zone: ZoneWithClaim) => void;
   /** Called once after first render so parent can trigger SWR revalidation */
   onMutateRef?: (mutate: () => void) => void;
-  /** In dev mode, called when user clicks the map to set a fake GPS position */
-  onDevPositionSet?: (coords: { lat: number; lng: number }) => void;
-  /** Dev-mode override position shown on the map */
-  devPosition?: { lat: number; lng: number } | null;
-  /** Whether dev GPS click-to-pin mode is active */
-  devGpsActive?: boolean;
-  /** Called when the dev GPS toggle button is clicked */
-  onDevGpsToggle?: () => void;
+  /** Called when user clicks the map to set a manual GPS position (GPS override mode) */
+  onManualPositionSet?: (coords: { lat: number; lng: number }) => void;
+  /** Manual GPS override position shown on the map */
+  manualPosition?: { lat: number; lng: number } | null;
+  /** Whether manual GPS click-to-pin mode is active (participant has pressed pin button) */
+  manualGpsActive?: boolean;
+  /** Called when the manual GPS pin button is toggled by the participant */
+  onManualGpsToggle?: () => void;
   /** Day 2 team assignments for color mapping */
   day2Assignments?: Day2TeamAssignment[] | null;
   /** Host view: show all participant location dots */
   showAllLocations?: boolean;
 }
 
-// -- Sub-component: dev-mode map click to set position ----------------------
+// -- Sub-component: map click handler for manual GPS positioning -------------
 
-function DevMapClickHandler({ onClickMap }: { onClickMap: (lat: number, lng: number) => void }) {
+function MapClickHandler({ onClickMap }: { onClickMap: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
       onClickMap(e.latlng.lat, e.latlng.lng);
@@ -131,13 +131,13 @@ function DevMapClickHandler({ onClickMap }: { onClickMap: (lat: number, lng: num
   return null;
 }
 
-// -- Sub-component: dev GPS toggle button (outside the map, no Leaflet interference) --
+// -- Sub-component: manual GPS pin button (outside MapContainer so Leaflet can't swallow click) --
 
-function DevGpsToggle({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+function ManualGpsToggle({ active, onToggle }: { active: boolean; onToggle: () => void }) {
   return (
     <button
       onClick={onToggle}
-      title={active ? 'Dev GPS mode ON — click map to move pin' : 'Dev GPS mode OFF'}
+      title={active ? 'Manual GPS ON — click map to move pin' : 'Manual GPS OFF — tap to enable click-to-pin'}
       style={{ position: 'absolute', bottom: 88, right: 12, zIndex: 1000 }}
       className={`px-2.5 py-1.5 rounded-lg shadow text-xs font-semibold border transition-colors ${
         active
@@ -158,10 +158,10 @@ export default function ZoneMap({
   width = '100%',
   onZoneTap,
   onMutateRef,
-  onDevPositionSet,
-  devPosition,
-  devGpsActive = false,
-  onDevGpsToggle,
+  onManualPositionSet,
+  manualPosition,
+  manualGpsActive = false,
+  onManualGpsToggle,
   day2Assignments,
   showAllLocations = false,
 }: ZoneMapProps) {
@@ -189,9 +189,15 @@ export default function ZoneMap({
     { refreshInterval: 10_000 }
   );
 
-  // Show dev GPS features whenever the skip-location-check flag is set.
-  // This works both in local dev (.env.local) and on Vercel (env var in dashboard).
-  const isDev = process.env.NEXT_PUBLIC_SKIP_LOCATION_CHECK === 'true';
+  // GPS override mode: host-controlled server flag. When ON, the manual GPS pin
+  // button appears on the map so participants can click to set their position.
+  const { data: gpsOverrideData } = useSWR<{ active: boolean }>(
+    '/api/dev/mock-location',
+    fetcher,
+    { refreshInterval: 10_000 }
+  );
+  const gpsOverrideEnabled = gpsOverrideData?.active === true;
+  console.log('[ZoneMap] gpsOverrideEnabled:', gpsOverrideEnabled);
 
   // Destroy the Leaflet map instance on unmount so React StrictMode's
   // double-invoke doesn't leave a stale _leaflet_id on the container DOM node.
@@ -203,12 +209,12 @@ export default function ZoneMap({
     };
   }, []);
 
-  const handleDevClick = useCallback((lat: number, lng: number) => {
-    if (isDev && onDevPositionSet) {
-      console.log('[ZoneMap] Dev GPS pin set:', lat, lng);
-      onDevPositionSet({ lat, lng });
+  const handleManualClick = useCallback((lat: number, lng: number) => {
+    if (gpsOverrideEnabled && onManualPositionSet) {
+      console.log('[ZoneMap] Manual GPS pin placed:', lat, lng);
+      onManualPositionSet({ lat, lng });
     }
-  }, [isDev, onDevPositionSet]);
+  }, [gpsOverrideEnabled, onManualPositionSet]);
 
   const myColor = TEAM_COLORS[teamColor];
 
@@ -259,9 +265,9 @@ export default function ZoneMap({
 
           <ZoomControls />
 
-          {/* Dev mode: click-to-pin handler (only active when GPS mode is ON) */}
-          {isDev && devGpsActive && onDevPositionSet && (
-            <DevMapClickHandler onClickMap={handleDevClick} />
+          {/* Manual GPS: click-to-pin handler (only active when participant has turned pin mode ON) */}
+          {gpsOverrideEnabled && manualGpsActive && onManualPositionSet && (
+            <MapClickHandler onClickMap={handleManualClick} />
           )}
 
           {/* Zone circles */}
@@ -341,10 +347,10 @@ export default function ZoneMap({
             );
           })}
 
-          {/* Dev-mode override position marker */}
-          {isDev && devPosition && (
+          {/* Manual GPS position marker */}
+          {gpsOverrideEnabled && manualPosition && (
             <CircleMarker
-              center={[devPosition.lat, devPosition.lng]}
+              center={[manualPosition.lat, manualPosition.lng]}
               radius={10}
               pathOptions={{
                 color: '#f97316',
@@ -362,9 +368,9 @@ export default function ZoneMap({
         </MapContainer>
       )}
 
-      {/* Dev GPS toggle button — outside MapContainer so Leaflet can't swallow the click */}
-      {isDev && onDevGpsToggle && (
-        <DevGpsToggle active={devGpsActive} onToggle={onDevGpsToggle} />
+      {/* Manual GPS pin button — outside MapContainer so Leaflet can't swallow the click */}
+      {gpsOverrideEnabled && onManualGpsToggle && (
+        <ManualGpsToggle active={manualGpsActive} onToggle={onManualGpsToggle} />
       )}
 
       {/* Location loading indicator */}
@@ -374,12 +380,12 @@ export default function ZoneMap({
         </div>
       )}
 
-      {/* Dev mode GPS banner */}
-      {isDev && devGpsActive && (
+      {/* Manual GPS banner */}
+      {gpsOverrideEnabled && manualGpsActive && (
         <div className="bg-orange-50 border-t border-orange-200 px-4 py-2 text-orange-700 text-xs text-center">
-          {devPosition
-            ? `📍 Dev GPS: ${devPosition.lat.toFixed(5)}, ${devPosition.lng.toFixed(5)} — click map to move`
-            : '🗺️ Click anywhere on the map to place your dev GPS pin'}
+          {manualPosition
+            ? `📍 Manual GPS: ${manualPosition.lat.toFixed(5)}, ${manualPosition.lng.toFixed(5)} — tap map to move`
+            : '🗺️ Tap anywhere on the map to place your manual GPS pin'}
         </div>
       )}
 
