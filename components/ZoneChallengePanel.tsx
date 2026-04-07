@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
-import type { ZoneWithClaim, TeamColor, GamePhase, Day2TeamAssignment } from '@/types/zones';
+import type { ZoneWithClaim, TeamColor, Day2TeamAssignment } from '@/types/zones';
 import { getMockLocation, type LocationCoords } from '@/utils/locationService';
 import { mapDay1ColorToDay2 } from '@/utils/gamePhaseUtils';
 
@@ -47,13 +47,14 @@ interface ZoneChallengePanelProps {
   zone: ZoneWithClaim;
   participantId: string;
   teamColor: TeamColor;
-  phase: GamePhase;
+  /** True once the host has triggered the after-lunch merge — unlocks stealing and switches to after-lunch challenges */
+  afterLunch: boolean;
   onClose: () => void;
   onClaimSuccess: () => void;
   onCompleteSuccess: () => void;
   /** Manual GPS position set by participant on map (used when GPS override is active) */
   manualPosition?: { lat: number; lng: number } | null;
-  /** Day 2 team assignments — needed for steal mechanic */
+  /** Merged team assignments — needed for steal mechanic after lunch */
   day2Assignments?: Day2TeamAssignment[] | null;
 }
 
@@ -79,7 +80,7 @@ export default function ZoneChallengePanel({
   zone,
   participantId,
   teamColor,
-  phase,
+  afterLunch,
   onClose,
   onClaimSuccess,
   onCompleteSuccess,
@@ -124,12 +125,12 @@ export default function ZoneChallengePanel({
   // -- Determine panel state -------------------------------------------------
 
   const claim = zone.claim;
-  const challenge = zone.challenge;
+  // Show after-lunch challenge text when afterLunch is active
+  const challenge = (afterLunch && zone.afterLunchChallenge) ? zone.afterLunchChallenge : zone.challenge;
 
-  // In Day 2, determine "own team" by mapping through day2_team_assignments
-  const isDay2 = phase === 'day2';
+  // After lunch, determine "own team" by mapping through merged day2 assignments
   let isOwnTeam = claim?.team_color === teamColor;
-  if (isDay2 && claim && day2Assignments && day2Assignments.length > 0) {
+  if (afterLunch && claim && day2Assignments && day2Assignments.length > 0) {
     const claimDay2Color = mapDay1ColorToDay2(claim.team_color, day2Assignments) ?? claim.team_color;
     isOwnTeam = claimDay2Color === teamColor;
   }
@@ -143,8 +144,8 @@ export default function ZoneChallengePanel({
   const isOwnCompleted = isOwnTeam && isCompleted && !freshChallenge;
   const isRivalClaimed = !!claim && !isOwnTeam && !freshChallenge;
 
-  // Day 2 steal availability
-  const canSteal = isDay2 && isRivalClaimed && !isStealLocked && !isCompleted;
+  // After-lunch steal availability
+  const canSteal = afterLunch && isRivalClaimed && !isStealLocked && !isCompleted;
   // After a successful steal, show challenge (wasStolen + freshChallenge)
   const showStolenChallenge = wasStolen && !!freshChallenge;
 
@@ -178,7 +179,7 @@ export default function ZoneChallengePanel({
         body: JSON.stringify({
           participant_id: participantId,
           team_color: teamColor,
-          phase,
+          after_lunch: afterLunch,
           lat: coords.lat,
           lng: coords.lng,
         }),
@@ -233,7 +234,7 @@ export default function ZoneChallengePanel({
         body: JSON.stringify({
           participant_id: participantId,
           team_color: teamColor,
-          phase,
+          after_lunch: true,
           lat: coords.lat,
           lng: coords.lng,
         }),
@@ -285,7 +286,7 @@ export default function ZoneChallengePanel({
         body: JSON.stringify({
           participant_id: participantId,
           team_color: teamColor,
-          phase,
+          phase: 'day1',
         }),
       });
 
@@ -430,19 +431,19 @@ export default function ZoneChallengePanel({
                   )}
                 </button>
               )}
-              {/* Day 2 locked after steal */}
-              {phase === 'day2' && isStealLocked && (
+              {/* After lunch: locked after steal */}
+              {afterLunch && isStealLocked && (
                 <div className="px-3 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 text-sm font-medium text-center">
                   🔒 Stolen — locked
                 </div>
               )}
-              {/* Day 2 completed = immune */}
-              {phase === 'day2' && isCompleted && !isStealLocked && (
+              {/* After lunch: completed = immune */}
+              {afterLunch && isCompleted && !isStealLocked && (
                 <div className="px-3 py-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm font-medium text-center">
                   ✓ Completed — immune
                 </div>
               )}
-              {phase === 'day1' && (
+              {!afterLunch && (
                 <button
                   disabled
                   className="w-full h-12 bg-gray-200 text-gray-500 font-semibold rounded-xl cursor-not-allowed"

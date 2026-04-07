@@ -65,9 +65,10 @@ export class ZoneService {
   }
 
   /**
-   * Return all zones joined with their current claim and challenge for a given phase.
+   * Return all zones joined with their day1 claim and both phase challenges.
+   * Always uses day1 for ownership — after-lunch stealing modifies day1 rows.
    */
-  static async getZonesWithClaims(phase: GamePhase): Promise<ZoneWithClaim[]> {
+  static async getZonesWithClaims(_phase?: GamePhase): Promise<ZoneWithClaim[]> {
     const sql = getDb();
     const rows = await sql`
       SELECT
@@ -87,15 +88,22 @@ export class ZoneService {
         zc.completed_at           AS claim_completed_at,
         zc.steal_locked           AS claim_steal_locked,
         zc.points_awarded         AS claim_points_awarded,
-        ch.id                     AS challenge_id,
-        ch.zone_id                AS challenge_zone_id,
-        ch.phase                  AS challenge_phase,
-        ch.text                   AS challenge_text,
-        ch.type                   AS challenge_type,
-        ch.participant_scope      AS challenge_participant_scope
+        ch1.id                    AS challenge_id,
+        ch1.zone_id               AS challenge_zone_id,
+        ch1.phase                 AS challenge_phase,
+        ch1.text                  AS challenge_text,
+        ch1.type                  AS challenge_type,
+        ch1.participant_scope     AS challenge_participant_scope,
+        ch2.id                    AS al_challenge_id,
+        ch2.zone_id               AS al_challenge_zone_id,
+        ch2.phase                 AS al_challenge_phase,
+        ch2.text                  AS al_challenge_text,
+        ch2.type                  AS al_challenge_type,
+        ch2.participant_scope     AS al_challenge_participant_scope
       FROM zones z
-      LEFT JOIN zone_claims zc ON zc.zone_id = z.id AND zc.phase = ${phase}
-      LEFT JOIN challenges  ch ON ch.zone_id = z.id AND ch.phase = ${phase}
+      LEFT JOIN zone_claims zc ON zc.zone_id = z.id AND zc.phase = 'day1'
+      LEFT JOIN challenges  ch1 ON ch1.zone_id = z.id AND ch1.phase = 'day1'
+      LEFT JOIN challenges  ch2 ON ch2.zone_id = z.id AND ch2.phase = 'day2'
       ORDER BY z.id
     `;
     return rows.map((row) => ({
@@ -127,6 +135,16 @@ export class ZoneService {
             text: row.challenge_text,
             type: row.challenge_type,
             participant_scope: row.challenge_participant_scope,
+          }
+        : null,
+      afterLunchChallenge: row.al_challenge_id
+        ? {
+            id: row.al_challenge_id,
+            zone_id: row.al_challenge_zone_id,
+            phase: row.al_challenge_phase as GamePhase,
+            text: row.al_challenge_text,
+            type: row.al_challenge_type,
+            participant_scope: row.al_challenge_participant_scope,
           }
         : null,
     }));
@@ -355,15 +373,14 @@ export class ZoneService {
   }
 
   /**
-   * Get merged Day 2 scores: sum of points_awarded claims from both
-   * constituent Day 1 teams mapped through day2_team_assignments,
-   * PLUS any Day 2 phase claims that have points_awarded.
+   * Get merged after-lunch scores: day1 points for each team mapped through
+   * day2_team_assignments to their merged team color. All ownership (including
+   * steals) lives in day1 rows, so only day1 needs to be counted.
    */
   static async getDay2MergedScores(): Promise<Record<TeamColor, number>> {
     const sql = getDb();
 
-    // Day 1 points mapped to Day 2 teams
-    const day1Rows = await sql`
+    const rows = await sql`
       SELECT
         da.day2_team_color,
         COUNT(zc.id) AS total_points
@@ -373,20 +390,9 @@ export class ZoneService {
       GROUP BY da.day2_team_color
     `;
 
-    // Day 2 phase claims with points
-    const day2Rows = await sql`
-      SELECT team_color, COUNT(*) AS total_points
-      FROM zone_claims
-      WHERE phase = 'day2' AND points_awarded = true
-      GROUP BY team_color
-    `;
-
     const scores: Record<TeamColor, number> = { red: 0, yellow: 0, blue: 0, green: 0 };
-    for (const row of day1Rows) {
-      scores[row.day2_team_color as TeamColor] += Number(row.total_points);
-    }
-    for (const row of day2Rows) {
-      scores[row.team_color as TeamColor] += Number(row.total_points);
+    for (const row of rows) {
+      scores[row.day2_team_color as TeamColor] = Number(row.total_points);
     }
     return scores;
   }
@@ -408,7 +414,7 @@ export class ZoneService {
   ): Promise<{ claim: ZoneClaim; challenge: Challenge | null }> {
     const sql = getDb();
 
-    // 1. Archive old claim into zone_claim_history
+    // 1. Archive previous ownership into zone_claim_history for audit trail
     await sql`
       INSERT INTO zone_claim_history
         (zone_id, team_color, phase, claimed_by_participant, claimed_at,
@@ -420,22 +426,23 @@ export class ZoneService {
          ${existingClaim.points_awarded}, ${stealerTeamColor})
     `;
 
-    // 2. Delete old claim
-    await sql`
-      DELETE FROM zone_claims WHERE id = ${existingClaim.id}
-    `;
-
-    // 3. Insert new claim with steal_locked = true
+    // 2. Transfer ownership by updating the existing row in-place
     const claimRows = await sql`
-      INSERT INTO zone_claims
-        (zone_id, team_color, phase, claimed_by_participant, steal_locked, completed, points_awarded)
-      VALUES
-        (${zoneId}, ${stealerTeamColor}, 'day2', ${stealerParticipantId}, true, false, false)
+      UPDATE zone_claims
+      SET
+        team_color             = ${stealerTeamColor},
+        claimed_by_participant = ${stealerParticipantId},
+        claimed_at             = NOW(),
+        completed              = false,
+        completed_at           = NULL,
+        steal_locked           = true,
+        points_awarded         = false
+      WHERE id = ${existingClaim.id}
       RETURNING *
     `;
     const newClaim = claimRows[0] as ZoneClaim;
 
-    // 4. Get Day 2 challenge for this zone
+    // 3. Get after-lunch (day2) challenge for this zone
     const challengeRows = await sql`
       SELECT id, zone_id, phase, text, type, participant_scope
       FROM challenges

@@ -28,10 +28,10 @@ const TEAM_COLORS: Record<TeamColor, string> = {
 
 const UNCLAIMED_COLOR = '#9ca3af';
 
-function getZoneColor(claim: ZoneWithClaim['claim'], phase?: string, day2Assignments?: Day2TeamAssignment[] | null): string {
+function getZoneColor(claim: ZoneWithClaim['claim'], afterLunch?: boolean, day2Assignments?: Day2TeamAssignment[] | null): string {
   if (!claim) return UNCLAIMED_COLOR;
-  // In Day 2, map the claim's team_color through day2_team_assignments
-  if (phase === 'day2' && day2Assignments && day2Assignments.length > 0) {
+  // After lunch, map the claim's team_color through day2_team_assignments
+  if (afterLunch && day2Assignments && day2Assignments.length > 0) {
     const day2Color = mapDay1ColorToDay2(claim.team_color, day2Assignments);
     if (day2Color) return TEAM_COLORS[day2Color] ?? UNCLAIMED_COLOR;
   }
@@ -100,7 +100,8 @@ function ZoomControls() {
 interface ZoneMapProps {
   participantId: string;
   teamColor: TeamColor;
-  phase: 'day1' | 'day2';
+  /** Whether the after-lunch steal phase is active — used for color mapping via day2Assignments */
+  afterLunch?: boolean;
   height?: string;
   width?: string;
   onZoneTap?: (zone: ZoneWithClaim) => void;
@@ -114,7 +115,7 @@ interface ZoneMapProps {
   manualGpsActive?: boolean;
   /** Called when the manual GPS pin button is toggled by the participant */
   onManualGpsToggle?: () => void;
-  /** Day 2 team assignments for color mapping */
+  /** Merged team assignments for after-lunch color mapping */
   day2Assignments?: Day2TeamAssignment[] | null;
   /** Host view: show all participant location dots */
   showAllLocations?: boolean;
@@ -153,7 +154,7 @@ function ManualGpsToggle({ active, onToggle }: { active: boolean; onToggle: () =
 export default function ZoneMap({
   participantId,
   teamColor,
-  phase,
+  afterLunch = false,
   height = '85dvh',
   width = '100%',
   onZoneTap,
@@ -168,7 +169,7 @@ export default function ZoneMap({
   const { coords, error: locationError, loading: locationLoading } = useParticipantLocation(participantId);
 
   const { data: zones, error: fetchError, isLoading: zonesLoading, mutate } = useSWR<ZoneWithClaim[]>(
-    `/api/zones/claims?phase=${phase}`,
+    '/api/zones/claims',
     fetcher,
     { refreshInterval: 10_000 }
   );
@@ -272,7 +273,7 @@ export default function ZoneMap({
 
           {/* Zone circles */}
           {zones?.map((zone) => {
-            const color = getZoneColor(zone.claim, phase, day2Assignments);
+            const color = getZoneColor(zone.claim, afterLunch, day2Assignments);
             const isClaimed = !!zone.claim;
             const isCompleted = zone.claim?.completed === true;
 

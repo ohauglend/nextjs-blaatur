@@ -60,8 +60,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
   // Once the host triggers the merge, the after-lunch steal phase begins inside day-1
   const afterLunch = day2Assignments != null && day2Assignments.length > 0;
 
-  // Effective phase and team color for the current zone-game phase
-  const effectivePhase = afterLunch ? 'day2' : 'day1';
+  // Effective team color: after lunch use merged day2 color, before lunch use day1 color
   const effectiveTeamColor = afterLunch
     ? getTeamForPhase(participantId, 'day2', day2Assignments!)
     : getParticipantTeamColor(participantId, 'day1');
@@ -147,13 +146,13 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                 <>
                   <TeamScoreHeader
                     teamColor={effectiveTeamColor}
-                    phase={effectivePhase}
+                    afterLunch={afterLunch}
                     day2Assignments={afterLunch ? day2Assignments : undefined}
                   />
                   <ZoneMap
                     participantId={participantId}
                     teamColor={effectiveTeamColor}
-                    phase={effectivePhase}
+                    afterLunch={afterLunch}
                     onZoneTap={handleZoneTap}
                     onMutateRef={handleMutateRef}
                     onManualPositionSet={handleManualPositionSet}
@@ -167,7 +166,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                       zone={selectedZone}
                       participantId={participantId}
                       teamColor={effectiveTeamColor}
-                      phase={effectivePhase}
+                      afterLunch={afterLunch}
                       onClose={() => setSelectedZone(null)}
                       onClaimSuccess={handleClaimSuccess}
                       onCompleteSuccess={handleCompleteSuccess}

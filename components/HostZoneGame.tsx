@@ -33,9 +33,6 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
   const day2Assignments = day2Data?.assignments ?? null;
   const afterLunch = day2Assignments && day2Assignments.length > 0;
 
-  // Phase is determined by whether the merge has happened, not by app state
-  const phase = afterLunch ? 'day2' : 'day1';
-
   // Day 2 transition
   const [transitioning, setTransitioning] = useState(false);
   const [transitionError, setTransitionError] = useState<string | null>(null);
@@ -105,7 +102,7 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">🗺️ Zone Game</h1>
           <p className="text-gray-600">
             {isGameActive
-              ? `Game active — ${afterLunch ? 'Steal Phase' : 'Day 1'}`
+              ? `Game active — ${afterLunch ? 'After lunch (steal phase)' : 'Before lunch'}`
               : `Game inactive — current state: ${currentState ?? 'loading...'}`}
           </p>
         </div>
@@ -131,7 +128,7 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
             <ZoneMap
               participantId="host"
               teamColor="blue"
-              phase={phase}
+              afterLunch={!!afterLunch}
               height="50dvh"
               showAllLocations
               day2Assignments={day2Assignments ?? null}
