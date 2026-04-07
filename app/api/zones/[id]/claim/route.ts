@@ -161,13 +161,6 @@ export async function POST(
       );
     }
 
-    if (existing.completed) {
-      return NextResponse.json(
-        { error: 'completed_immune', team_color: existing.team_color },
-        { status: 409 },
-      );
-    }
-
     if (existing.steal_locked) {
       return NextResponse.json(
         { error: 'steal_locked', team_color: existing.team_color },
