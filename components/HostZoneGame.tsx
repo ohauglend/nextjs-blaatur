@@ -22,8 +22,7 @@ interface HostZoneGameProps {
 export default function HostZoneGame({ token }: HostZoneGameProps) {
   const currentState = useCurrentState();
   const hostParticipantId = getParticipantByToken(token) ?? 'oskar';
-  const isGameActive = currentState === 'day-1' || currentState === 'day-2';
-  const phase = currentState === 'day-2' ? 'day2' : 'day1';
+  const isGameActive = currentState === 'day-1';
 
   // Day 2 assignments — API returns { assignments: [...] }
   const { data: day2Data, mutate: mutateAssignments } = useSWR<{ assignments: Day2TeamAssignment[] }>(
@@ -32,6 +31,10 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
     { refreshInterval: 15_000 }
   );
   const day2Assignments = day2Data?.assignments ?? null;
+  const afterLunch = day2Assignments && day2Assignments.length > 0;
+
+  // Phase is determined by whether the merge has happened, not by app state
+  const phase = afterLunch ? 'day2' : 'day1';
 
   // Day 2 transition
   const [transitioning, setTransitioning] = useState(false);
@@ -91,8 +94,7 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
   }, [mutateAssignments]);
 
   // Build day2 team summary for display
-  const hasDay2Assignments = day2Assignments && day2Assignments.length > 0;
-  const day2Teams = hasDay2Assignments
+  const day2Teams = afterLunch
     ? buildDay2Summary(day2Assignments)
     : null;
 
@@ -103,7 +105,7 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
           <h1 className="text-4xl font-bold text-gray-800 mb-2">🗺️ Zone Game</h1>
           <p className="text-gray-600">
             {isGameActive
-              ? `Game active — ${currentState === 'day-1' ? 'Day 1' : 'Day 2'}`
+              ? `Game active — ${afterLunch ? 'Steal Phase' : 'Day 1'}`
               : `Game inactive — current state: ${currentState ?? 'loading...'}`}
           </p>
         </div>
@@ -145,7 +147,7 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
               <span className="mr-2">🔄</span>Day 2 Transition
             </h2>
 
-            {hasDay2Assignments ? (
+            {afterLunch ? (
               <div>
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                   <p className="text-green-800 font-medium">✅ Day 2 merge completed</p>
@@ -171,14 +173,14 @@ export default function HostZoneGame({ token }: HostZoneGameProps) {
                 <p className="text-gray-600 mb-4 text-sm">
                   Merges Day 1 teams based on scores: highest + lowest → Team A, second + third → Team B.
                 </p>
-                {currentState !== 'day-2' && (
+                {currentState !== 'day-1' && (
                   <p className="text-amber-600 text-sm mb-4">
-                    ⚠️ Transition available when state is set to &quot;day-2&quot;
+                    ⚠️ Only available during Day 1 before merge
                   </p>
                 )}
                 <button
                   onClick={handleTransition}
-                  disabled={currentState !== 'day-2' || transitioning}
+                  disabled={currentState !== 'day-1' || transitioning}
                   className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {transitioning ? 'Merging…' : 'Start Day 2 — Merge Teams'}
