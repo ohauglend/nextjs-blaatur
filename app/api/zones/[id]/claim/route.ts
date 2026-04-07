@@ -31,10 +31,10 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { participant_id, team_color, phase, lat, lng } = body as {
+  const { participant_id, team_color, after_lunch, lat, lng } = body as {
     participant_id?: unknown;
     team_color?: unknown;
-    phase?: unknown;
+    after_lunch?: unknown;
     lat?: unknown;
     lng?: unknown;
   };
@@ -43,15 +43,16 @@ export async function POST(
   if (
     typeof participant_id !== 'string' ||
     typeof team_color !== 'string' ||
-    typeof phase !== 'string' ||
     typeof lat !== 'number' ||
     typeof lng !== 'number'
   ) {
     return NextResponse.json(
-      { error: 'Missing or invalid fields: participant_id, team_color, phase, lat, lng are required' },
+      { error: 'Missing or invalid fields: participant_id, team_color, lat, lng are required' },
       { status: 400 },
     );
   }
+
+  const afterLunch = after_lunch === true;
 
   if (!isValidParticipant(participant_id)) {
     return NextResponse.json({ error: 'Unknown participant' }, { status: 400 });
@@ -59,10 +60,6 @@ export async function POST(
 
   if (!['red', 'yellow', 'blue', 'green'].includes(team_color)) {
     return NextResponse.json({ error: 'Invalid team_color' }, { status: 400 });
-  }
-
-  if (phase !== 'day1' && phase !== 'day2') {
-    return NextResponse.json({ error: 'Invalid phase. Must be day1 or day2.' }, { status: 400 });
   }
 
   // No database: run proximity check against mock zone data, then return mock success
@@ -106,17 +103,11 @@ export async function POST(
       }
     }
 
-    // 3. Phase-specific claim logic
-    if (phase === 'day1') {
-      // Day 1: simple claim — reject if already taken
-      const existing = await ZoneService.getClaimForZonePhase(zoneId, 'day1');
-      if (existing) {
-        return NextResponse.json(
-          { error: 'already_claimed', team_color: existing.team_color },
-          { status: 409 },
-        );
-      }
+    // 3. Claim logic — always operates on day1 rows
+    const existing = await ZoneService.getClaimForZonePhase(zoneId, 'day1');
 
+    if (!existing) {
+      // No existing claim — fresh claim for any phase
       const { challenge } = await ZoneService.claimZone(
         zoneId,
         participant_id,
@@ -138,82 +129,56 @@ export async function POST(
       });
     }
 
-    // --- Day 2 logic: fresh claim OR steal ---
+    if (!afterLunch) {
+      // Before lunch: zone already claimed, reject
+      return NextResponse.json(
+        { error: 'already_claimed', team_color: existing.team_color },
+        { status: 409 },
+      );
+    }
 
-    // Look up the participant's Day 2 team assignment
+    // --- After lunch: steal logic against day1 rows ---
+
     const day2Assignments = await ZoneService.getDay2Assignments();
     const myAssignment = day2Assignments.find((a) => a.participant_id === participant_id);
     if (!myAssignment) {
       return NextResponse.json(
-        { error: 'Day 2 transition has not occurred yet, or participant has no assignment' },
+        { error: 'After-lunch transition has not occurred yet, or participant has no assignment' },
         { status: 400 },
       );
     }
     const myDay2Color = myAssignment.day2_team_color as TeamColor;
 
-    // Check for existing day2 claim on this zone
-    const existingDay2 = await ZoneService.getClaimForZonePhase(zoneId, 'day2');
-
-    if (!existingDay2) {
-      // Also check if there is a day1 claim that could be a steal target.
-      // Day 1 claims are in a separate phase row. In Day 2, if the zone has
-      // no day2 claim yet, it is available for a fresh day2 claim.
-      const { challenge } = await ZoneService.claimZone(
-        zoneId,
-        participant_id,
-        myDay2Color,
-        'day2',
-      );
-
-      return NextResponse.json({
-        success: true,
-        challenge: challenge
-          ? {
-              id: challenge.id,
-              text: challenge.text,
-              type: challenge.type,
-              participant_scope: challenge.participant_scope,
-              zone_name: zone.name,
-            }
-          : null,
-      });
-    }
-
-    // There IS an existing day2 claim — evaluate steal conditions
-
-    // Map the existing claim's team_color to its Day 2 merged color
+    // Map existing claim's team to its merged day2 color
     const claimDay2Color =
-      day2Assignments.find((a) => a.day1_team_color === existingDay2.team_color)?.day2_team_color
-      ?? existingDay2.team_color;
+      day2Assignments.find((a) => a.day1_team_color === existing.team_color)?.day2_team_color
+      ?? existing.team_color;
 
-    // Own team cannot steal from itself
     if (claimDay2Color === myDay2Color) {
       return NextResponse.json(
-        { error: 'own_team', team_color: existingDay2.team_color },
+        { error: 'own_team', team_color: existing.team_color },
         { status: 409 },
       );
     }
 
-    // Completed zones are immune
-    if (existingDay2.completed) {
+    if (existing.completed) {
       return NextResponse.json(
-        { error: 'completed_immune', team_color: existingDay2.team_color },
+        { error: 'completed_immune', team_color: existing.team_color },
         { status: 409 },
       );
     }
 
-    // Already stolen once — permanently locked
-    if (existingDay2.steal_locked) {
+    if (existing.steal_locked) {
       return NextResponse.json(
-        { error: 'steal_locked', team_color: existingDay2.team_color },
+        { error: 'steal_locked', team_color: existing.team_color },
         { status: 409 },
       );
     }
 
-    // All checks pass — perform the steal
+    // All checks pass — perform the steal on the day1 row
     const { challenge: stealChallenge } = await ZoneService.stealZone(
       zoneId,
-      existingDay2,
+      existing,
       participant_id,
       myDay2Color,
     );

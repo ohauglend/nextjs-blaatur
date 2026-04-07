@@ -47,9 +47,9 @@ export default function ZoneScoreboard() {
           <thead>
             <tr className="border-b-2 border-gray-200">
               <th className="text-left py-2 pr-4 font-semibold text-gray-700">Team</th>
-              <th className="text-center py-2 px-3 font-semibold text-gray-700">Day 1</th>
-              <th className="text-center py-2 px-3 font-semibold text-gray-700">Day 2</th>
-              <th className="text-center py-2 px-3 font-semibold text-gray-700">Combined</th>
+              <th className="text-center py-2 px-3 font-semibold text-gray-700">Before lunch</th>
+              <th className="text-center py-2 px-3 font-semibold text-gray-700">After lunch</th>
+              <th className="text-center py-2 px-3 font-semibold text-gray-700">Total</th>
             </tr>
           </thead>
           <tbody>

@@ -35,7 +35,10 @@ export interface ZoneClaim {
 
 export interface ZoneWithClaim extends Zone {
   claim: ZoneClaim | null;
+  /** Before-lunch (day1) challenge */
   challenge: Challenge | null;
+  /** After-lunch (day2) challenge — shown once the host triggers the merge */
+  afterLunchChallenge: Challenge | null;
 }
 
 export interface Day2TeamAssignment {
