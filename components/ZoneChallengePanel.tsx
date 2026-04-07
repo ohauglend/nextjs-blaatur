@@ -437,12 +437,6 @@ export default function ZoneChallengePanel({
                   🔒 Stolen — locked
                 </div>
               )}
-              {/* After lunch: completed = immune */}
-              {afterLunch && isCompleted && !isStealLocked && (
-                <div className="px-3 py-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm font-medium text-center">
-                  ✓ Completed — immune
-                </div>
-              )}
               {!afterLunch && (
                 <button
                   disabled
