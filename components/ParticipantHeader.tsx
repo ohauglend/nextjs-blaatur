@@ -57,8 +57,8 @@ function InfoButton({ participantId }: { participantId: string }) {
           <div className="flex items-center space-x-2">
             <span>🏨</span>
             <div>
-              <p className="font-medium">Hotel Blåtur</p>
-              <p className="text-gray-600">123 Adventure Street, Mystery City</p>
+              <p className="font-medium">Hotell Blåtur</p>
+              <p className="text-gray-600">Wouldnt you like to know 😶</p>
             </div>
           </div>
 

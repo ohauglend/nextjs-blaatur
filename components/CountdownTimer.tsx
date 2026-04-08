@@ -50,7 +50,7 @@ export default function CountdownTimer() {
         {TRIP_CONFIG.name}
       </h2>
       <p className="text-gray-600 mb-8 text-lg">
-        🗓️ Mystery Departure: May 1st, 2026
+        🗓️ Mystery Departure: April 22nd, 2026
       </p>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
