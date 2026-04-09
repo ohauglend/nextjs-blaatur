@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { getTimeUntilDeparture, formatTimeUnit } from '@/utils/timeUtils';
-import { TRIP_CONFIG } from '@/data/participants';
+import { useState, useEffect } from "react";
+import { getTimeUntilDeparture, formatTimeUnit } from "@/utils/timeUtils";
+import { TRIP_CONFIG } from "@/data/participants";
 
 export default function CountdownTimer() {
   const [timeLeft, setTimeLeft] = useState(getTimeUntilDeparture());
@@ -10,7 +10,7 @@ export default function CountdownTimer() {
 
   useEffect(() => {
     setMounted(true);
-    
+
     const timer = setInterval(() => {
       setTimeLeft(getTimeUntilDeparture());
     }, 1000);
@@ -37,9 +37,7 @@ export default function CountdownTimer() {
         <h2 className="text-3xl font-bold text-green-800 mb-4">
           🎉 It's Time!
         </h2>
-        <p className="text-xl text-green-600">
-          The adventure begins now!
-        </p>
+        <p className="text-xl text-green-600">The adventure begins now!</p>
       </div>
     );
   }
@@ -50,9 +48,9 @@ export default function CountdownTimer() {
         {TRIP_CONFIG.name}
       </h2>
       <p className="text-gray-600 mb-8 text-lg">
-        🗓️ Mystery Departure: May 1st, 2026
+        🗓️ Avreise Blåtur: 23. April 2026
       </p>
-      
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-3xl font-bold text-blue-600">
@@ -62,7 +60,7 @@ export default function CountdownTimer() {
             Days
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-3xl font-bold text-purple-600">
             {timeLeft.hours}
@@ -71,7 +69,7 @@ export default function CountdownTimer() {
             Hours
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-3xl font-bold text-pink-600">
             {timeLeft.minutes}
@@ -80,7 +78,7 @@ export default function CountdownTimer() {
             Minutes
           </div>
         </div>
-        
+
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-3xl font-bold text-red-600">
             {timeLeft.seconds}
@@ -92,7 +90,7 @@ export default function CountdownTimer() {
       </div>
 
       <div className="text-2xl font-semibold text-gray-700">
-        {formatTimeUnit(timeLeft.days, 'day')} until takeoff! ✈️
+        {formatTimeUnit(timeLeft.days, "day")} until takeoff! ✈️
       </div>
     </div>
   );

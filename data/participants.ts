@@ -17,11 +17,11 @@ export const PARTICIPANTS: Record<string, Participant> = {
 
 export const TRIP_CONFIG = {
   tripId: 'blatur-2026',
-  departureDate: '2026-05-01T00:00:00Z',
+  departureDate: '2026-04-23T12:00:00',
   name: 'Blåtur',
   phases: {
     preTrip: { startDate: '2025-09-07T00:00:00Z' },
-    airport: { startDate: '2026-05-01T00:00:00Z' },
-    trip: { startDate: '2026-05-01T06:00:00Z' },
+    airport: { startDate: '2026-04-23T12:00:00' },
+    trip: { startDate: '2026-04-23T12:00:00' },
   }
 };
