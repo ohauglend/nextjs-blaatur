@@ -30,7 +30,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
   'brage': {
     id: 'brage',
     name: 'Brage',
-    emoji: '⚽',
+    emoji: '👉👈',
     profileImage: '/data/participants/brage/photo.svg',
     flightQR: '/data/participants/brage/flight-qr.png',
     returnBooking: '/data/participants/brage/return-booking.pdf',
