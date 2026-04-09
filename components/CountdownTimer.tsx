@@ -48,7 +48,7 @@ export default function CountdownTimer() {
         {TRIP_CONFIG.name}
       </h2>
       <p className="text-gray-600 mb-8 text-lg">
-        🗓️ Avreise Blåtur: April 23, 2026
+        🗓️ Avreise Blåtur: 23. April 2026
       </p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
