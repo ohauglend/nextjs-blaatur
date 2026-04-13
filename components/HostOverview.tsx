@@ -1,4 +1,3 @@
-import { PACKING_LISTS } from '@/data/packing-lists';
 import { PARTICIPANT_ASSETS } from '@/data/participant-assets';
 import PackingList from '@/components/PackingList';
 import CountdownTimer from '@/components/CountdownTimer';
@@ -13,7 +12,6 @@ interface HostOverviewProps {
 }
 
 export default function HostOverview({ participantId }: HostOverviewProps) {
-  const packingList = PACKING_LISTS[participantId];
   const assets = PARTICIPANT_ASSETS[participantId];
 
   return (
@@ -47,7 +45,7 @@ export default function HostOverview({ participantId }: HostOverviewProps) {
           <span className="mr-2">🎒</span>
           Packing Phase Component
         </h3>
-        {packingList && <PackingList packingList={packingList} />}
+        <PackingList participantId={participantId} />
       </div>
 
       {/* Flight Components */}

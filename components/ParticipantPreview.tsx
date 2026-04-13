@@ -1,7 +1,6 @@
 'use client';
 
 import HostNavigation from './HostNavigation';
-import { PACKING_LISTS } from '@/data/packing-lists';
 import { PARTICIPANT_ASSETS } from '@/data/participant-assets';
 import PackingList from '@/components/PackingList';
 import CountdownTimer from '@/components/CountdownTimer';
@@ -17,8 +16,6 @@ interface ParticipantPreviewProps {
 }
 
 export default function ParticipantPreview({ token, participantId }: ParticipantPreviewProps) {
-  const packingList = PACKING_LISTS[participantId];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-100 via-orange-50 to-red-100">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -67,7 +64,7 @@ export default function ParticipantPreview({ token, participantId }: Participant
               <span className="mr-2">🎒</span>
               Packing Phase Component
             </h3>
-            {packingList && <PackingList packingList={packingList} />}
+            <PackingList participantId={participantId} />
           </div>
 
           {/* Flight Components */}

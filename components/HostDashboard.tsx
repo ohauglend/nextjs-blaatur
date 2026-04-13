@@ -113,6 +113,23 @@ export default function HostDashboard({ token }: HostDashboardProps) {
               Open Controls →
             </div>
           </Link>
+
+          {/* Packing Lists Card */}
+          <Link
+            href={`/${token}/host/packing`}
+            className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all border-l-4 border-orange-500"
+          >
+            <div className="text-4xl mb-4">🎒</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Packing Lists
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Create, edit, and assign packing items for all participants. View everyone&apos;s list in one place.
+            </p>
+            <div className="text-orange-600 font-medium">
+              Open Packing Lists →
+            </div>
+          </Link>
         </div>
 
         {/* Participant Access */}

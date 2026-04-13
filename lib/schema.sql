@@ -297,3 +297,86 @@ INSERT INTO challenges (zone_id, phase, text, type, participant_scope) VALUES
   -- Daugava Riverbank (zone 20)
   ((SELECT id FROM zones WHERE name = 'Daugava Riverbank'), 'day1', 'Take a panoramic photo of the Daugava River including both banks if possible.', 'geography', 'team'),
   ((SELECT id FROM zones WHERE name = 'Daugava Riverbank'), 'day2', 'One team member must finish a beverage beginning with the letter I. Team picks who drinks.', 'generic', 'one');
+
+-- =====================================================
+-- Packing List — Items
+-- =====================================================
+-- DB-backed packing items. Each item belongs to a specific participant
+-- or to 'everyone' (shown in all lists).
+-- No required/notes fields — lean schema.
+-- emoji_override, if set, replaces the default category icon in the UI.
+
+CREATE TABLE IF NOT EXISTS packing_items (
+    id SERIAL PRIMARY KEY,
+    text TEXT NOT NULL,
+    category VARCHAR(20) NOT NULL CHECK (category IN ('clothing', 'electronics', 'personal', 'documents', 'special')),
+    emoji_override TEXT,
+    participant_id VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for participant-scoped queries (fetches '{participant}' + 'everyone' rows)
+CREATE INDEX IF NOT EXISTS idx_packing_items_participant
+ON packing_items(participant_id);
+
+-- Index for stable display ordering
+CREATE INDEX IF NOT EXISTS idx_packing_items_created_at
+ON packing_items(created_at ASC);
+
+-- =====================================================
+-- Packing List — Seed Data
+-- =====================================================
+-- Items present in all 8 lists → 'everyone'
+-- All others → specific participant ID
+-- Derived from data/packing-lists.ts (static data replaced by this table)
+
+INSERT INTO packing_items (text, category, participant_id) VALUES
+  -- Everyone (present in all 8 participant lists)
+  ('Camera or phone',           'electronics', 'everyone'),
+  ('Passport',                  'documents',   'everyone'),
+
+  -- Emilie
+  ('Warm jacket',               'clothing',    'emilie'),
+  ('Comfortable walking shoes', 'clothing',    'emilie'),
+  ('Swimwear',                  'clothing',    'emilie'),
+  ('Portable charger',          'electronics', 'emilie'),
+  ('Sunglasses',                'personal',    'emilie'),
+  ('Waterproof bag',            'special',     'emilie'),
+
+  -- Mathias
+  ('Hiking boots',              'clothing',    'mathias'),
+  ('Rain jacket',               'clothing',    'mathias'),
+  ('Quick-dry clothes',         'clothing',    'mathias'),
+  ('Portable charger',          'electronics', 'mathias'),
+  ('Head torch/flashlight',     'special',     'mathias'),
+  ('Waterproof bag',            'special',     'mathias'),
+
+  -- Brage
+  ('Formal shirt',              'clothing',    'brage'),
+  ('Casual comfortable clothes','clothing',    'brage'),
+  ('Swimwear',                  'clothing',    'brage'),
+  ('Portable charger',          'electronics', 'brage'),
+  ('Sunscreen',                 'personal',    'brage'),
+  ('Reusable water bottle',     'special',     'brage'),
+
+  -- Sara
+  ('Layered clothing',          'clothing',    'sara'),
+  ('Comfortable shoes',         'clothing',    'sara'),
+  ('Swimwear',                  'clothing',    'sara'),
+  ('Portable charger',          'electronics', 'sara'),
+  ('Personal medications',      'personal',    'sara'),
+  ('Small backpack',            'special',     'sara'),
+
+  -- Johanna
+  ('Versatile outfits',         'clothing',    'johanna'),
+  ('Good walking shoes',        'clothing',    'johanna'),
+  ('Swimwear',                  'clothing',    'johanna'),
+  ('Portable charger',          'electronics', 'johanna'),
+  ('Journal or notebook',       'personal',    'johanna'),
+  ('Travel pillow',             'special',     'johanna'),
+
+  -- Hosts
+  ('Host materials',            'special',     'oskar'),
+  ('Host materials',            'special',     'odd'),
+  ('Host materials',            'special',     'aasmund');
