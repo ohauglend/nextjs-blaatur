@@ -1,62 +1,144 @@
-import { PackingList as PackingListType, PackingItem } from '@/data/packing-lists';
+'use client';
 
-interface PackingListProps {
-  packingList: PackingListType;
+import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
+import type { PackingItem, PackingCategory } from '@/types/packing';
+import { getItemIcon } from '@/types/packing';
+
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`API ${r.status}`);
+    return r.json();
+  });
+
+const CATEGORY_COLORS: Record<PackingCategory, string> = {
+  clothing: 'bg-blue-50 border-blue-200',
+  electronics: 'bg-purple-50 border-purple-200',
+  personal: 'bg-green-50 border-green-200',
+  documents: 'bg-red-50 border-red-200',
+  special: 'bg-yellow-50 border-yellow-200',
+};
+
+function packedKey(participantId: string, itemId: number) {
+  return `packing-packed-${participantId}-${itemId}`;
 }
 
-function PackingItemComponent({ item }: { item: PackingItem }) {
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'clothing': return '👕';
-      case 'electronics': return '🔌';
-      case 'personal': return '🧴';
-      case 'documents': return '📄';
-      case 'special': return '🎯';
-      default: return '📦';
-    }
-  };
+interface PackingListProps {
+  participantId: string;
+}
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'clothing': return 'bg-blue-50 border-blue-200';
-      case 'electronics': return 'bg-purple-50 border-purple-200';
-      case 'personal': return 'bg-green-50 border-green-200';
-      case 'documents': return 'bg-red-50 border-red-200';
-      case 'special': return 'bg-yellow-50 border-yellow-200';
-      default: return 'bg-gray-50 border-gray-200';
-    }
-  };
-
+function PackingItemRow({
+  item,
+  packed,
+  onToggle,
+}: {
+  item: PackingItem;
+  packed: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <div className={`p-3 rounded-lg border-2 ${getCategoryColor(item.category)} ${
-      item.required ? 'border-solid' : 'border-dashed opacity-75'
-    }`}>
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2 flex-1">
-          <span className="text-lg">{getCategoryIcon(item.category)}</span>
-          <div>
-            <span className={`font-medium ${item.required ? 'text-gray-800' : 'text-gray-600'}`}>
-              {item.item}
-            </span>
-            {item.required && <span className="text-red-500 ml-1">*</span>}
-          </div>
-        </div>
+    <div
+      className={`p-3 rounded-lg border-2 ${CATEGORY_COLORS[item.category]} ${
+        packed ? 'opacity-60' : ''
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        {/* Radio-style toggle */}
+        <button
+          type="button"
+          onClick={onToggle}
+          className="shrink-0 w-6 h-6 rounded-full border-2 border-gray-400 flex items-center justify-center transition-colors hover:border-blue-500"
+          aria-label={packed ? 'Mark as not packed' : 'Mark as packed'}
+        >
+          {packed && (
+            <div className="w-3.5 h-3.5 rounded-full bg-blue-500" />
+          )}
+        </button>
+
+        <span className="text-lg shrink-0">{getItemIcon(item)}</span>
+        <span
+          className={`font-medium flex-1 ${
+            packed ? 'line-through text-gray-400' : 'text-gray-800'
+          }`}
+        >
+          {item.text}
+        </span>
         <span className="text-xs uppercase tracking-wide text-gray-500 bg-white px-2 py-1 rounded">
           {item.category}
         </span>
       </div>
-      {item.notes && (
-        <p className="text-sm text-gray-600 mt-2 italic">
-          💡 {item.notes}
-        </p>
-      )}
     </div>
   );
 }
 
-export default function PackingList({ packingList }: PackingListProps) {
-  const requiredItems = packingList.items.filter(item => item.required);
-  const optionalItems = packingList.items.filter(item => !item.required);
+export default function PackingList({ participantId }: PackingListProps) {
+  const { data: items, error } = useSWR<PackingItem[]>(
+    `/api/packing-items?participant=${participantId}`,
+    fetcher,
+  );
+
+  // Packed state from localStorage
+  const [packedSet, setPackedSet] = useState<Set<number>>(new Set());
+
+  // Restore packed state on mount + when items change
+  useEffect(() => {
+    if (!items) return;
+    const restored = new Set<number>();
+    for (const item of items) {
+      if (typeof window !== 'undefined' && localStorage.getItem(packedKey(participantId, item.id)) === 'true') {
+        restored.add(item.id);
+      }
+    }
+    setPackedSet(restored);
+  }, [items, participantId]);
+
+  const togglePacked = useCallback(
+    (itemId: number) => {
+      setPackedSet((prev) => {
+        const next = new Set(prev);
+        if (next.has(itemId)) {
+          next.delete(itemId);
+          localStorage.removeItem(packedKey(participantId, itemId));
+        } else {
+          next.add(itemId);
+          localStorage.setItem(packedKey(participantId, itemId), 'true');
+        }
+        return next;
+      });
+    },
+    [participantId],
+  );
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+        Failed to load packing list.
+      </div>
+    );
+  }
+
+  if (!items) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <div className="text-center py-8 text-gray-500">Loading packing list…</div>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <div className="text-center py-8 text-gray-500">No items added yet.</div>
+      </div>
+    );
+  }
+
+  // Group items by category
+  const categories = Array.from(new Set(items.map((i) => i.category)));
+  const grouped = categories.map((cat) => ({
+    category: cat,
+    items: items.filter((i) => i.category === cat),
+  }));
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
@@ -69,56 +151,24 @@ export default function PackingList({ packingList }: PackingListProps) {
         </p>
       </div>
 
-      {packingList.specialInstructions && packingList.specialInstructions.length > 0 && (
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
-          <h3 className="font-semibold text-blue-800 mb-2 flex items-center">
-            <span className="mr-2">📝</span>
-            Special Instructions
-          </h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            {packingList.specialInstructions.map((instruction, index) => (
-              <li key={index} className="flex items-start">
-                <span className="mr-2">•</span>
-                {instruction}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       <div className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-            <span className="mr-2">⚠️</span>
-            Essential Items ({requiredItems.length})
-          </h3>
-          <div className="space-y-3">
-            {requiredItems.map((item, index) => (
-              <PackingItemComponent key={index} item={item} />
-            ))}
-          </div>
-        </div>
-
-        {optionalItems.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-              <span className="mr-2">💭</span>
-              Optional Items ({optionalItems.length})
+        {grouped.map(({ category, items: catItems }) => (
+          <div key={category}>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 capitalize">
+              {category} ({catItems.length})
             </h3>
             <div className="space-y-3">
-              {optionalItems.map((item, index) => (
-                <PackingItemComponent key={index} item={item} />
+              {catItems.map((item) => (
+                <PackingItemRow
+                  key={item.id}
+                  item={item}
+                  packed={packedSet.has(item.id)}
+                  onToggle={() => togglePacked(item.id)}
+                />
               ))}
             </div>
           </div>
-        )}
-      </div>
-
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <p className="text-sm text-gray-600 text-center">
-          <span className="font-medium">*</span> Required items • 
-          <span className="font-medium"> Dashed border</span> = Optional items
-        </p>
+        ))}
       </div>
     </div>
   );

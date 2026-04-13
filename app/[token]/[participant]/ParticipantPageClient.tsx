@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import { isValidParticipant, getParticipant, getParticipantTeamColor } from '@/utils/participantUtils';
 import { getTeamForPhase } from '@/utils/gamePhaseUtils';
-import { PACKING_LISTS } from '@/data/packing-lists';
 import { useCurrentState } from '@/hooks/useCurrentState';
 import { getParticipantToken } from '@/utils/secureAccess';
 import ParticipantHeader from '@/components/ParticipantHeader';
@@ -37,7 +36,6 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
 
   const participant = getParticipant(participantId);
   const currentState = useCurrentState();
-  const packingList = PACKING_LISTS[participantId];
   const token = getParticipantToken(participantId);
 
   // Zone challenge panel state
@@ -130,7 +128,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
             <>
               <CountdownTimer />
               <DestinationGuess participantId={participantId} />
-              {packingList && <PackingList packingList={packingList} />}
+              <PackingList participantId={participantId} />
             </>
           )}
 
@@ -205,7 +203,6 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
               <h3 className="font-bold mb-2">🔧 Debug Info:</h3>
               <p>Current State: <span className="font-mono bg-gray-200 px-1 rounded">{currentState}</span></p>
               <p>Participant Role: <span className="font-mono bg-gray-200 px-1 rounded">{participant.role}</span></p>
-              <p>Has Packing List: <span className="font-mono bg-gray-200 px-1 rounded">{packingList ? 'Yes' : 'No'}</span></p>
             </div>
           )}
         </div>
