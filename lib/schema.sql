@@ -184,6 +184,24 @@ CREATE TABLE IF NOT EXISTS dev_settings (
 INSERT INTO dev_settings (key, value) VALUES ('mock_gps_active', 'false') ON CONFLICT DO NOTHING;
 
 -- =====================================================
+-- Meet-up Spots
+-- =====================================================
+-- One row per participant. Hosts upsert address + meetup time via the API.
+-- Participants see this data read-only when the trip state is 'meetup'.
+
+CREATE TABLE IF NOT EXISTS meetup_spots (
+    id SERIAL PRIMARY KEY,
+    participant_id VARCHAR(50) NOT NULL UNIQUE,
+    address TEXT,
+    meetup_time TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_meetup_spots_participant
+ON meetup_spots(participant_id);
+
+-- =====================================================
 -- Zone Challenge Game — Seed Data: Zones
 -- =====================================================
 -- 20 Riga zones, coordinates verified against OpenStreetMap (March 2026).

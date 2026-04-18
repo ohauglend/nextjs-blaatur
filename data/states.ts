@@ -1,6 +1,7 @@
 export type TripState = 
   | 'pre-trip'
   | 'pre-trip-packing'
+  | 'meetup'
   | 'flight'
   | 'day-1'
   | 'day-2'
@@ -29,6 +30,13 @@ export const TRIP_STATES: Record<TripState, StateInfo> = {
     description: 'Packing lists are now available',
     emoji: '🎒',
     participantView: 'Time to pack for your adventure!'
+  },
+  'meetup': {
+    id: 'meetup',
+    name: 'Meet-up Reveal',
+    description: 'Personal meetup spots and times are revealed',
+    emoji: '📍',
+    participantView: 'Find out where and when to meet!'
   },
   'flight': {
     id: 'flight',
@@ -68,7 +76,7 @@ export const TRIP_STATES: Record<TripState, StateInfo> = {
 };
 
 // Current state - in a real app this could be from an API or environment variable
-export let CURRENT_STATE: TripState = 'pre-trip-packing';
+export let CURRENT_STATE: TripState = 'meetup';
 
 export function getCurrentState(): TripState {
   return CURRENT_STATE;
