@@ -5,13 +5,14 @@ import HostNavigation from '@/components/HostNavigation';
 import ChallengeEditor from '@/components/ChallengeEditor';
 
 interface HostChallengesPageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 }
 
-export default function HostChallengesPage({ params }: HostChallengesPageProps) {
-  const { isValid } = validateHostToken(params.token);
+export default async function HostChallengesPage({ params }: HostChallengesPageProps) {
+  const { token } = await params;
+  const { isValid } = validateHostToken(token);
   if (!isValid) notFound();
 
   return (
@@ -22,18 +23,18 @@ export default function HostChallengesPage({ params }: HostChallengesPageProps) 
           <p className="text-gray-600">Challenge Editor</p>
         </div>
 
-        <HostNavigation token={params.token} currentPage="zones" />
+        <HostNavigation token={token} currentPage="zones" />
 
         <div className="mb-4">
           <Link
-            href={`/${params.token}/host/zones`}
+            href={`/${token}/host/zones`}
             className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
           >
             ← Back to Zone Game
           </Link>
         </div>
 
-        <ChallengeEditor token={params.token} />
+        <ChallengeEditor token={token} />
       </div>
     </div>
   );

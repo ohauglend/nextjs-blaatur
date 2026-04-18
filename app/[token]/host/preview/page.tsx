@@ -3,17 +3,18 @@ import { validateHostToken } from '@/utils/hostAccess';
 import ParticipantPreview from '@/components/ParticipantPreview';
 
 interface HostPreviewPageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 }
 
-export default function HostPreviewPage({ params }: HostPreviewPageProps) {
-  const { isValid, participantId } = validateHostToken(params.token);
+export default async function HostPreviewPage({ params }: HostPreviewPageProps) {
+  const { token } = await params;
+  const { isValid, participantId } = validateHostToken(token);
   
   if (!isValid || !participantId) {
     notFound();
   }
 
-  return <ParticipantPreview token={params.token} participantId={participantId} />;
+  return <ParticipantPreview token={token} participantId={participantId} />;
 }

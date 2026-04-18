@@ -3,17 +3,18 @@ import { validateHostToken } from '@/utils/hostAccess';
 import HostDashboard from '@/components/HostDashboard';
 
 interface HostPageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 }
 
-export default function HostPage({ params }: HostPageProps) {
-  const { isValid } = validateHostToken(params.token);
+export default async function HostPage({ params }: HostPageProps) {
+  const { token } = await params;
+  const { isValid } = validateHostToken(token);
   
   if (!isValid) {
     notFound();
   }
 
-  return <HostDashboard token={params.token} />;
+  return <HostDashboard token={token} />;
 }

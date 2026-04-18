@@ -12,13 +12,14 @@ function getDb() {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { participant: string } }
+  { params }: { params: Promise<{ participant: string }> }
 ) {
+  const { participant: participantParam } = await params;
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
   }
 
-  const { participant } = params;
+  const participant = participantParam;
 
   if (!VALID_PARTICIPANTS.includes(participant)) {
     return NextResponse.json({ error: 'Invalid participant' }, { status: 400 });
