@@ -12,6 +12,7 @@ import { getParticipantToken } from '@/utils/secureAccess';
 import ParticipantHeader from '@/components/ParticipantHeader';
 import PackingList from '@/components/PackingList';
 import CountdownTimer from '@/components/CountdownTimer';
+import MeetupSpot from '@/components/MeetupSpot';
 import DestinationGuess from '@/components/DestinationGuess';
 import VotingInterface from '@/components/VotingInterface';
 import TeamActivity from '@/components/TeamActivity';
@@ -129,6 +130,15 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
               <CountdownTimer />
               <DestinationGuess participantId={participantId} />
               <PackingList participantId={participantId} />
+            </>
+          )}
+
+          {/* Meet-up Phase */}
+          {currentState === 'meetup' && (
+            <>
+              <CountdownTimer />
+              <MeetupSpot participantId={participantId} />
+              <DestinationGuess participantId={participantId} />
             </>
           )}
 

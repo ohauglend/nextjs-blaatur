@@ -3,17 +3,18 @@ import { validateHostToken } from '@/utils/hostAccess';
 import HostControls from '@/components/HostControls';
 
 interface HostControlsPageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 }
 
-export default function HostControlsPage({ params }: HostControlsPageProps) {
-  const { isValid } = validateHostToken(params.token);
+export default async function HostControlsPage({ params }: HostControlsPageProps) {
+  const { token } = await params;
+  const { isValid } = validateHostToken(token);
   
   if (!isValid) {
     notFound();
   }
 
-  return <HostControls token={params.token} />;
+  return <HostControls token={token} />;
 }

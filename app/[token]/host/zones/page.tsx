@@ -3,13 +3,14 @@ import { validateHostToken } from '@/utils/hostAccess';
 import HostZoneGame from '@/components/HostZoneGame';
 
 interface HostZonesPageProps {
-  params: {
+  params: Promise<{
     token: string;
-  };
+  }>;
 }
 
-export default function HostZonesPage({ params }: HostZonesPageProps) {
-  const { isValid } = validateHostToken(params.token);
+export default async function HostZonesPage({ params }: HostZonesPageProps) {
+  const { token } = await params;
+  const { isValid } = validateHostToken(token);
   if (!isValid) notFound();
-  return <HostZoneGame token={params.token} />;
+  return <HostZoneGame token={token} />;
 }

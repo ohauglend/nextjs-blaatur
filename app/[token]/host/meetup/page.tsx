@@ -1,14 +1,14 @@
 import { notFound } from 'next/navigation';
 import { validateHostToken } from '@/utils/hostAccess';
-import HostPackingPage from '@/components/HostPackingPage';
+import HostMeetupPage from '@/components/HostMeetupPage';
 
-interface HostPackingPageProps {
+interface HostMeetupPageProps {
   params: Promise<{
     token: string;
   }>;
 }
 
-export default async function HostPackingRoute({ params }: HostPackingPageProps) {
+export default async function HostMeetupRoute({ params }: HostMeetupPageProps) {
   const { token } = await params;
   const { isValid } = validateHostToken(token);
 
@@ -16,5 +16,5 @@ export default async function HostPackingRoute({ params }: HostPackingPageProps)
     notFound();
   }
 
-  return <HostPackingPage token={token} />;
+  return <HostMeetupPage token={token} />;
 }
