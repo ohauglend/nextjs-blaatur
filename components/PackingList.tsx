@@ -72,9 +72,42 @@ function PackingItemRow({
 }
 
 export default function PackingList({ participantId }: PackingListProps) {
-  const { data: items, error } = useSWR<PackingItem[]>(
+  const { data: items, error, mutate } = useSWR<PackingItem[]>(
     `/api/packing-items?participant=${participantId}`,
     fetcher,
+  );
+
+  // Add-item form state
+  const [showForm, setShowForm] = useState(false);
+  const [newText, setNewText] = useState('');
+  const [newCategory, setNewCategory] = useState<PackingCategory>('personal');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleAddItem = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newText.trim()) return;
+      setSubmitting(true);
+      setSubmitError(null);
+      try {
+        const res = await fetch('/api/packing-items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: newText.trim(), category: newCategory, participant_id: participantId }),
+        });
+        if (!res.ok) throw new Error('Failed to save item');
+        await mutate();
+        setNewText('');
+        setNewCategory('personal');
+        setShowForm(false);
+      } catch {
+        setSubmitError('Could not save item. Please try again.');
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [newText, newCategory, participantId, mutate],
   );
 
   // Packed state from localStorage
@@ -170,6 +203,56 @@ export default function PackingList({ participantId }: PackingListProps) {
           </div>
         ))}
       </div>
+
+      {/* Add item button / form */}
+      {!showForm ? (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="w-full mt-4 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors font-medium"
+        >
+          + Add item
+        </button>
+      ) : (
+        <form onSubmit={handleAddItem} className="mt-4 p-4 bg-white rounded-lg border-2 border-blue-200 space-y-3">
+          <input
+            type="text"
+            placeholder="Item name…"
+            value={newText}
+            onChange={(e) => setNewText(e.target.value)}
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            autoFocus
+          />
+          <select
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value as PackingCategory)}
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            <option value="clothing">👕 Clothing</option>
+            <option value="electronics">🔌 Electronics</option>
+            <option value="personal">🧴 Personal</option>
+            <option value="documents">📄 Documents</option>
+            <option value="special">🎯 Special</option>
+          </select>
+          {submitError && <p className="text-red-600 text-sm">{submitError}</p>}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={submitting || !newText.trim()}
+              className="flex-1 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-50 transition-colors"
+            >
+              {submitting ? 'Saving…' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowForm(false); setNewText(''); setSubmitError(null); }}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
