@@ -130,6 +130,23 @@ export default function HostDashboard({ token }: HostDashboardProps) {
               Open Packing Lists →
             </div>
           </Link>
+
+          {/* Itinerary Card */}
+          <Link
+            href={`/${token}/host/itinerary`}
+            className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all border-l-4 border-indigo-500"
+          >
+            <div className="text-4xl mb-4">📋</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Itinerary
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Manage trip summary and daily schedules. Add times, activities, and highlights for each day.
+            </p>
+            <div className="text-indigo-600 font-medium">
+              Open Itinerary →
+            </div>
+          </Link>
         </div>
 
         {/* Participant Access */}
