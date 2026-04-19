@@ -79,7 +79,10 @@ function ItemRow({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (editing) inputRef.current?.focus();
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }, [editing]);
 
   const startEdit = () => {
@@ -217,7 +220,7 @@ function ItemRow({
         <div className="text-xs font-semibold text-gray-500">{formatDatetime(item.datetime)}</div>
         <div className="text-sm text-gray-800">{item.text}</div>
       </div>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex gap-1 shrink-0">
         <button
           onClick={startEdit}
           className="px-2 py-1 text-xs bg-gray-100 rounded hover:bg-gray-200"
@@ -308,6 +311,7 @@ function CreateForm({
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
         className="w-full border rounded px-3 py-2 text-sm"
         maxLength={300}
         placeholder="What's happening…"
@@ -398,6 +402,9 @@ export default function ItineraryEditor({ token }: ItineraryEditorProps) {
 
       {/* Active panel */}
       <TabPanel type={activeTab} />
+
+      {/* Extra space so mobile keyboard doesn't cover inputs */}
+      <div className="h-64 md:h-0" />
     </div>
   );
 }
