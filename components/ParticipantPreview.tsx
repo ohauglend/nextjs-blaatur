@@ -9,6 +9,7 @@ import VotingInterface from '@/components/VotingInterface';
 import TeamActivity from '@/components/TeamActivity';
 import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
+import ItineraryView from '@/components/ItineraryView';
 
 interface ParticipantPreviewProps {
   token: string;
@@ -76,6 +77,28 @@ export default function ParticipantPreview({ token, participantId }: Participant
             <div className="space-y-4">
               <FlightInfo participantId={participantId} type="departure" />
               <FlightInfo participantId={participantId} type="return" />
+            </div>
+          </div>
+
+          {/* Itinerary Components */}
+          <div className="border-2 border-indigo-200 rounded-lg p-4 bg-indigo-50">
+            <h3 className="font-bold text-indigo-800 mb-3 flex items-center">
+              <span className="mr-2">📋</span>
+              Itinerary Components
+            </h3>
+            <div className="space-y-4">
+              <div className="bg-white p-3 rounded border">
+                <h4 className="font-medium text-gray-800 mb-2">Trip Summary</h4>
+                <ItineraryView type="summary" />
+              </div>
+              <div className="bg-white p-3 rounded border">
+                <h4 className="font-medium text-gray-800 mb-2">Day 1 Schedule</h4>
+                <ItineraryView type="day-1" />
+              </div>
+              <div className="bg-white p-3 rounded border">
+                <h4 className="font-medium text-gray-800 mb-2">Day 2 Schedule</h4>
+                <ItineraryView type="day-2" />
+              </div>
             </div>
           </div>
 

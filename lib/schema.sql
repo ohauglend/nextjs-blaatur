@@ -202,6 +202,25 @@ CREATE INDEX IF NOT EXISTS idx_meetup_spots_participant
 ON meetup_spots(participant_id);
 
 -- =====================================================
+-- Itinerary Items
+-- =====================================================
+-- Global itinerary items for summary (flight state), day-1, and day-2.
+-- Hosts manage items via the API; participants view read-only.
+
+CREATE TABLE IF NOT EXISTS itinerary_items (
+    id SERIAL PRIMARY KEY,
+    itinerary_type VARCHAR(10) NOT NULL CHECK (itinerary_type IN ('summary', 'day-1', 'day-2')),
+    datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    text TEXT NOT NULL,
+    emoji VARCHAR(10) NOT NULL DEFAULT '📅',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_itinerary_items_type
+ON itinerary_items(itinerary_type);
+
+-- =====================================================
 -- Zone Challenge Game — Seed Data: Zones
 -- =====================================================
 -- 20 Riga zones, coordinates verified against OpenStreetMap (March 2026).

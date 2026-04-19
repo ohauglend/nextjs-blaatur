@@ -20,6 +20,7 @@ import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
 import TeamScoreHeader from '@/components/TeamScoreHeader';
 import ZoneChallengePanel from '@/components/ZoneChallengePanel';
+import ItineraryView from '@/components/ItineraryView';
 import type { ZoneWithClaim, Day2TeamAssignment } from '@/types/zones';
 
 const ZoneMap = dynamic(() => import('@/components/ZoneMap'), { ssr: false });
@@ -144,7 +145,10 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
 
           {/* Flight Phase */}
           {currentState === 'flight' && (
-            <FlightInfo participantId={participantId} type="departure" />
+            <>
+              <FlightInfo participantId={participantId} type="departure" />
+              <ItineraryView type="summary" />
+            </>
           )}
 
           {/* Day 1 — includes steal phase once host triggers the merge */}
@@ -186,6 +190,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
               )}
               <TeamActivity participantId={participantId} day={1} />
               <VotingInterface participantId={participantId} />
+              <ItineraryView type="day-1" collapsible />
             </>
           )}
 
@@ -194,6 +199,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
             <>
               <TeamActivity participantId={participantId} day={2} />
               <VotingInterface participantId={participantId} />
+              <ItineraryView type="day-2" collapsible />
             </>
           )}
 
