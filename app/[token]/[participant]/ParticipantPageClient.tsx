@@ -139,6 +139,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
             <>
               <CountdownTimer />
               <MeetupSpot participantId={participantId} />
+              <PackingList participantId={participantId} />
               <DestinationGuess participantId={participantId} />
             </>
           )}
