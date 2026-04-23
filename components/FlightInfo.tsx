@@ -25,9 +25,11 @@ export default function FlightInfo({ participantId, type }: FlightInfoProps) {
             <p className="text-sm text-gray-600 mb-2">Boarding Pass QR Code</p>
             <div className="bg-white p-4 rounded border-2 border-dashed border-gray-300">
               <p className="text-xs text-gray-500 mb-2">QR Code for {assets.name}</p>
-              <div className="w-32 h-32 mx-auto bg-gray-200 flex items-center justify-center text-xs text-gray-500">
-                [QR Code]<br/>Placeholder
-              </div>
+              <img
+                src={assets.flightQR}
+                alt={`${assets.name}'s boarding pass QR code`}
+                className="w-48 h-48 mx-auto object-contain"
+              />
             </div>
             <p className="text-xs text-gray-600 mt-2">
               Scan at airport check-in
