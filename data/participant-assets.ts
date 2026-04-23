@@ -14,7 +14,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Emilie',
     emoji: '💃',
     profileImage: '/data/participants/emilie/photo.svg',
-    flightQR: '/data/participants/emilie/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/emilie.png',
     returnBooking: '/data/participants/emilie/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/emilie-folder'
   },
@@ -23,7 +23,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Mathias',
     emoji: '🎸',
     profileImage: '/data/participants/mathias/photo.svg',
-    flightQR: '/data/participants/mathias/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/mathias.png',
     returnBooking: '/data/participants/mathias/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/mathias-folder'
   },
@@ -32,7 +32,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Brage',
     emoji: '👉👈',
     profileImage: '/data/participants/brage/photo.svg',
-    flightQR: '/data/participants/brage/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/brage.png',
     returnBooking: '/data/participants/brage/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/brage-folder'
   },
@@ -41,7 +41,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Sara',
     emoji: '🌸',
     profileImage: '/data/participants/sara/photo.svg',
-    flightQR: '/data/participants/sara/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/sara.svg',
     returnBooking: '/data/participants/sara/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/sara-folder'
   },
@@ -50,7 +50,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Johanna',
     emoji: '📚',
     profileImage: '/data/participants/johanna/photo.svg',
-    flightQR: '/data/participants/johanna/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/johanna.png',
     returnBooking: '/data/participants/johanna/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/johanna-folder'
   },
@@ -59,7 +59,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Oskar',
     emoji: '👑',
     profileImage: '/data/participants/oskar/photo.svg',
-    flightQR: '/data/participants/oskar/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/oskar.png',
     returnBooking: '/data/participants/oskar/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/oskar-folder'
   },
@@ -68,7 +68,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Odd',
     emoji: '🎯',
     profileImage: '/data/participants/odd/photo.svg',
-    flightQR: '/data/participants/odd/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/odd.png',
     returnBooking: '/data/participants/odd/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/odd-folder'
   },
@@ -77,7 +77,7 @@ export const PARTICIPANT_ASSETS: Record<string, ParticipantAssets> = {
     name: 'Aasmund',
     emoji: '🎭',
     profileImage: '/data/participants/aasmund/photo.svg',
-    flightQR: '/data/participants/aasmund/flight-qr.png',
+    flightQR: '/boarding-passes/outbound/aasmund.png',
     returnBooking: '/data/participants/aasmund/return-booking.pdf',
     googleDriveLink: 'https://drive.google.com/drive/folders/aasmund-folder'
   }
