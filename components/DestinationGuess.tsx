@@ -174,7 +174,7 @@ export default function DestinationGuess({ participantId }: DestinationGuessProp
                 className={`flex items-center justify-between p-2 rounded text-sm ${
                   prevGuess.is_active 
                     ? 'bg-blue-50 border border-blue-200' 
-                    : 'bg-gray-50 text-gray-500'
+                    : 'bg-gray-50 text-gray-700'
                 }`}
               >
                 <div className="flex items-center gap-2">

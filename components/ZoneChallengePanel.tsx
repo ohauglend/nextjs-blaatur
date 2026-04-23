@@ -433,14 +433,14 @@ export default function ZoneChallengePanel({
               )}
               {/* After lunch: locked after steal */}
               {afterLunch && isStealLocked && (
-                <div className="px-3 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 text-sm font-medium text-center">
+                <div className="px-3 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-700 text-sm font-medium text-center">
                   🔒 Stolen — locked
                 </div>
               )}
               {!afterLunch && (
                 <button
                   disabled
-                  className="w-full h-12 bg-gray-200 text-gray-500 font-semibold rounded-xl cursor-not-allowed"
+                  className="w-full h-12 bg-gray-200 text-gray-700 font-semibold rounded-xl cursor-not-allowed"
                 >
                   Already Claimed
                 </button>

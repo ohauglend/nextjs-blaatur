@@ -125,7 +125,7 @@ export default function CitySelector({ onSelect, disabled = false, selectedCity 
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-800"
             aria-label="Clear search"
           >
             ✕
@@ -147,7 +147,7 @@ export default function CitySelector({ onSelect, disabled = false, selectedCity 
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="font-medium text-gray-900">{city.name}</div>
-              <div className="text-sm text-gray-500">{city.country}</div>
+              <div className="text-sm text-gray-700">{city.country}</div>
             </button>
           ))}
         </div>
@@ -156,7 +156,7 @@ export default function CitySelector({ onSelect, disabled = false, selectedCity 
       {/* No results message */}
       {searchQuery.length >= 2 && searchResults.length === 0 && !disabled && !selectedCity && (
         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-          <p className="text-sm text-gray-500">No cities found matching "{searchQuery}"</p>
+          <p className="text-sm text-gray-700">No cities found matching "{searchQuery}"</p>
         </div>
       )}
     </div>

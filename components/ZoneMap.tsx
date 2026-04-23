@@ -241,7 +241,7 @@ export default function ZoneMap({
       {zonesLoading && (
         <div
           style={{ height, width }}
-          className="bg-gray-100 flex items-center justify-center text-gray-400 animate-pulse"
+          className="bg-gray-100 flex items-center justify-center text-gray-600 animate-pulse"
         >
           Loading map…
         </div>
