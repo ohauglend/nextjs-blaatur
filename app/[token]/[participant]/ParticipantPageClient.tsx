@@ -105,7 +105,7 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
           <div className="mb-6">
             <Link
               href={`/${token}/host`}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-400 text-white rounded-lg shadow-lg hover:shadow-xl transition-all font-bold"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 rounded-lg shadow-lg hover:shadow-xl transition-all font-bold"
             >
               <span className="mr-2">👑</span>
               Go to Host Interface

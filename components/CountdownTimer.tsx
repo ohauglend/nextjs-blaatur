@@ -56,7 +56,7 @@ export default function CountdownTimer() {
           <div className="text-3xl font-bold text-blue-600">
             {timeLeft.days}
           </div>
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
+          <div className="text-sm text-gray-700 uppercase tracking-wide">
             Days
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function CountdownTimer() {
           <div className="text-3xl font-bold text-purple-600">
             {timeLeft.hours}
           </div>
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
+          <div className="text-sm text-gray-700 uppercase tracking-wide">
             Hours
           </div>
         </div>
@@ -74,7 +74,7 @@ export default function CountdownTimer() {
           <div className="text-3xl font-bold text-pink-600">
             {timeLeft.minutes}
           </div>
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
+          <div className="text-sm text-gray-700 uppercase tracking-wide">
             Minutes
           </div>
         </div>
@@ -83,7 +83,7 @@ export default function CountdownTimer() {
           <div className="text-3xl font-bold text-red-600">
             {timeLeft.seconds}
           </div>
-          <div className="text-sm text-gray-500 uppercase tracking-wide">
+          <div className="text-sm text-gray-700 uppercase tracking-wide">
             Seconds
           </div>
         </div>

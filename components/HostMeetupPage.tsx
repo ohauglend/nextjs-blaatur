@@ -194,7 +194,7 @@ function MeetupRow({ participantId, spot, onSaved }: MeetupRowProps) {
       <span>{roleTag}</span>
       <span className="font-semibold text-gray-800 w-24">{label}</span>
       <span className="text-gray-600 flex-1 truncate">{spot?.address || '—'}</span>
-      <span className="text-gray-500 text-sm w-48 text-right">{formattedTime}</span>
+      <span className="text-gray-700 text-sm w-48 text-right">{formattedTime}</span>
       <button
         onClick={startEdit}
         className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-lg hover:bg-blue-200 transition-all"

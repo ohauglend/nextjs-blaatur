@@ -43,10 +43,6 @@ export default function FlightInfo({ participantId, type }: FlightInfoProps) {
             <span>Oslo Airport (OSL)</span>
           </div>
           <div className="flex justify-between p-3 bg-blue-50 rounded">
-            <span className="font-medium">Time:</span>
-            <span>May 1st, 08:30</span>
-          </div>
-          <div className="flex justify-between p-3 bg-blue-50 rounded">
             <span className="font-medium">Gate:</span>
             <span>Will be announced</span>
           </div>
@@ -73,8 +69,8 @@ export default function FlightInfo({ participantId, type }: FlightInfoProps) {
         <div className="bg-gray-100 p-4 rounded-lg inline-block">
           <p className="text-sm text-gray-600 mb-2">Full Booking Confirmation</p>
           <div className="bg-white p-4 rounded border">
-            <p className="text-xs text-gray-500 mb-2">Booking for {assets.name}</p>
-            <div className="w-48 h-32 mx-auto bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+            <p className="text-xs text-gray-700 mb-2">Booking for {assets.name}</p>
+            <div className="w-48 h-32 mx-auto bg-gray-200 flex items-center justify-center text-xs text-gray-700">
               [Booking PDF]<br/>Placeholder
             </div>
           </div>
