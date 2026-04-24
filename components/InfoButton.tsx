@@ -1,12 +1,32 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import useSWR from 'swr';
 import { PARTICIPANT_ASSETS } from '@/data/participant-assets';
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function InfoButton({ participantId }: { participantId: string }) {
   const assets = PARTICIPANT_ASSETS[participantId];
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const { data, mutate } = useSWR<{ count: number }>(
+    `/api/beer-count/${participantId}`,
+    fetcher,
+  );
+  const beerCount = data?.count ?? 0;
+
+  async function handleBeerClick() {
+    // Optimistic update
+    await mutate(
+      async () => {
+        const res = await fetch(`/api/beer-count/${participantId}`, { method: 'POST' });
+        return res.json();
+      },
+      { optimisticData: { count: beerCount + 1 }, rollbackOnError: true },
+    );
+  }
 
   // Close when clicking/tapping outside the panel
   useEffect(() => {
@@ -25,7 +45,21 @@ export default function InfoButton({ participantId }: { participantId: string })
   }, [isOpen]);
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="flex items-center gap-2" ref={panelRef}>
+      {/* Beer counter */}
+      <button
+        onClick={handleBeerClick}
+        className="flex items-center gap-1 px-3 py-2 bg-amber-100 hover:bg-amber-200 rounded-full transition-colors"
+        aria-label="Beer counter"
+      >
+        <span className="text-xl">🍻</span>
+        {beerCount > 0 && (
+          <span className="text-sm font-bold text-amber-800">{beerCount}</span>
+        )}
+      </button>
+
+      {/* Info button + dropdown */}
+      <div className="relative">
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className="p-3 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors"
@@ -99,6 +133,7 @@ export default function InfoButton({ participantId }: { participantId: string })
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

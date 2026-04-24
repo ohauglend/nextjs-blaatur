@@ -417,3 +417,106 @@ INSERT INTO packing_items (text, category, participant_id) VALUES
   ('Host materials',            'special',     'oskar'),
   ('Host materials',            'special',     'odd'),
   ('Host materials',            'special',     'aasmund');
+-- =====================================================
+-- Floating Heads Voting
+-- =====================================================
+-- Per-voter, per-question, per-target single-pick vote.
+-- A voter writes one row per target: score=100 for the picked target, 0 for the rest.
+-- Aggregations compute distinct voter count = MAX(voter_count) across targets.
+
+CREATE TABLE IF NOT EXISTS voting_scores (
+    id SERIAL PRIMARY KEY,
+    voter_id VARCHAR(50) NOT NULL,
+    question_key VARCHAR(50) NOT NULL,
+    target_id VARCHAR(50) NOT NULL,
+    score INTEGER NOT NULL CHECK (score BETWEEN 0 AND 100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE (voter_id, question_key, target_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_voting_scores_question
+  ON voting_scores(question_key);
+
+-- =====================================================
+-- Vote Sessions (dynamic host-configured voting)
+-- =====================================================
+-- Replaces the hardcoded voting_scores approach.
+-- Each row is a single voting question configured by a host.
+
+CREATE TABLE IF NOT EXISTS vote_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_day INTEGER NOT NULL CHECK (session_day IN (1, 2)),
+    title TEXT NOT NULL,
+    preset_type TEXT CHECK (preset_type IN ('closest_destination')),
+    points_tally INTEGER NOT NULL DEFAULT 1 CHECK (points_tally >= 0),
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_by TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_vote_sessions_day
+    ON vote_sessions(session_day);
+
+-- =====================================================
+-- Vote Session Participants
+-- =====================================================
+-- Which participants are eligible to receive votes in a session.
+-- Hosts manually assign these when configuring a vote.
+
+CREATE TABLE IF NOT EXISTS vote_session_participants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vote_session_id UUID NOT NULL REFERENCES vote_sessions(id) ON DELETE CASCADE,
+    participant_id TEXT NOT NULL,
+    photo_url TEXT,
+    added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(vote_session_id, participant_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_vote_session_participants_session
+    ON vote_session_participants(vote_session_id);
+
+-- =====================================================
+-- Participant Votes
+-- =====================================================
+-- Individual votes cast by participants during the voting state.
+-- One vote per participant per session (UNIQUE constraint).
+
+CREATE TABLE IF NOT EXISTS participant_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    vote_session_id UUID NOT NULL REFERENCES vote_sessions(id) ON DELETE CASCADE,
+    voter_name TEXT NOT NULL,
+    voted_for TEXT NOT NULL,
+    voted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(vote_session_id, voter_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_participant_votes_session
+    ON participant_votes(vote_session_id);
+
+-- =====================================================
+-- Score Adjustments (manual host corrections)
+-- =====================================================
+-- Allows hosts to add bonus/penalty points to the leaderboard.
+
+CREATE TABLE IF NOT EXISTS score_adjustments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    participant_id TEXT NOT NULL,
+    delta INTEGER NOT NULL,
+    reason TEXT,
+    created_by TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_score_adjustments_participant
+    ON score_adjustments(participant_id);
+
+-- =====================================================
+-- Beer Counts (per-participant 🍻 counter)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS beer_counts (
+    participant_id TEXT PRIMARY KEY,
+    count INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

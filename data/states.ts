@@ -3,6 +3,7 @@ export type TripState =
   | 'pre-trip-packing'
   | 'meetup'
   | 'flight'
+  | 'day-1-voting'
   | 'day-1'
   | 'day-2'
   | 'flight-home'
@@ -44,6 +45,13 @@ export const TRIP_STATES: Record<TripState, StateInfo> = {
     description: 'Flight information and boarding',
     emoji: '✈️',
     participantView: 'Your flight details are ready'
+  },
+  'day-1-voting': {
+    id: 'day-1-voting',
+    name: 'Day 1 - Morning Vote',
+    description: 'Floating-head sliding-scale votes before zone challenges',
+    emoji: '🗳️',
+    participantView: 'Cast your morning votes!'
   },
   'day-1': {
     id: 'day-1',

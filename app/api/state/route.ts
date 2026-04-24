@@ -10,7 +10,7 @@ export async function GET() {
   // For local development without database
   if (!process.env.DATABASE_URL) {
     return NextResponse.json({
-      state_id: 'pre-trip-packing',
+      state_id: 'day-1-voting',
       updated_at: new Date().toISOString(),
       updated_by: 'system'
     });
