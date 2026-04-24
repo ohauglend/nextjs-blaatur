@@ -14,7 +14,7 @@ import PackingList from '@/components/PackingList';
 import CountdownTimer from '@/components/CountdownTimer';
 import MeetupSpot from '@/components/MeetupSpot';
 import DestinationGuess from '@/components/DestinationGuess';
-import VotingInterface from '@/components/VotingInterface';
+import FloatingHeadsVote from '@/components/FloatingHeadsVote';
 import TeamActivity from '@/components/TeamActivity';
 import FlightInfo from '@/components/FlightInfo';
 import ThankYou from '@/components/ThankYou';
@@ -152,6 +152,11 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
             </>
           )}
 
+          {/* Day 1 Morning Vote — floating-head sliding-scale votes */}
+          {currentState === 'day-1-voting' && (
+            <FloatingHeadsVote participantId={participantId} />
+          )}
+
           {/* Day 1 — includes steal phase once host triggers the merge */}
           {currentState === 'day-1' && (
             <>
@@ -190,7 +195,6 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
                 </>
               )}
               <TeamActivity participantId={participantId} day={1} />
-              <VotingInterface participantId={participantId} />
               <ItineraryView type="day-1" collapsible />
             </>
           )}
@@ -199,7 +203,6 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
           {currentState === 'day-2' && (
             <>
               <TeamActivity participantId={participantId} day={2} />
-              <VotingInterface participantId={participantId} />
               <ItineraryView type="day-2" collapsible />
             </>
           )}
