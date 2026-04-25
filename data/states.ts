@@ -36,8 +36,8 @@ export const TRIP_STATES: Record<TripState, StateInfo> = {
     id: 'meetup',
     name: 'Meet-up Reveal',
     description: 'Personal meetup spots and times are revealed',
-    emoji: '📍',
-    participantView: 'Find out where and when to meet!'
+    emoji: '',
+    participantView: ''
   },
   'flight': {
     id: 'flight',
