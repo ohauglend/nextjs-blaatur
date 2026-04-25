@@ -45,21 +45,8 @@ export default function InfoButton({ participantId }: { participantId: string })
   }, [isOpen]);
 
   return (
-    <div className="flex items-center gap-2" ref={panelRef}>
-      {/* Beer counter */}
-      <button
-        onClick={handleBeerClick}
-        className="flex items-center gap-1 px-3 py-2 bg-amber-100 hover:bg-amber-200 rounded-full transition-colors"
-        aria-label="Beer counter"
-      >
-        <span className="text-xl">🍻</span>
-        {beerCount > 0 && (
-          <span className="text-sm font-bold text-amber-800">{beerCount}</span>
-        )}
-      </button>
-
-      {/* Info button + dropdown */}
-      <div className="relative">
+    <div className="relative" ref={panelRef}>
+      {/* Info button */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className="p-3 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors"
@@ -71,6 +58,19 @@ export default function InfoButton({ participantId }: { participantId: string })
 
       {isOpen && (
         <div className="absolute right-0 top-12 w-80 bg-white shadow-2xl rounded-lg p-4 border z-50">
+          {/* Beer counter */}
+          <div className="flex items-center justify-between mb-3 pb-3 border-b">
+            <span className="font-medium text-gray-800">🍻 Beer counter</span>
+            <button
+              onClick={handleBeerClick}
+              className="flex items-center gap-2 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-full transition-colors"
+              aria-label="Beer counter"
+            >
+              <span className="text-lg">🍺</span>
+              <span className="text-sm font-bold">{beerCount > 0 ? beerCount : '+'}</span>
+            </button>
+          </div>
+
           <h3 className="font-bold text-gray-800 mb-3 flex items-center">
             <span className="mr-2">📋</span>
             Trip Information
@@ -133,7 +133,6 @@ export default function InfoButton({ participantId }: { participantId: string })
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
