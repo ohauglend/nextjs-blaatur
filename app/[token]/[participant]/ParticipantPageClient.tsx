@@ -199,12 +199,9 @@ export default function ParticipantPageClient({ participantId }: ParticipantPage
             </>
           )}
 
-          {/* Day 2 — zone game has ended; show social content only */}
+          {/* Day 2 — show day 2 itinerary only */}
           {currentState === 'day-2' && (
-            <>
-              <TeamActivity participantId={participantId} day={2} />
-              <ItineraryView type="day-2" collapsible />
-            </>
+            <ItineraryView type="day-2" />
           )}
 
           {/* Flight Home */}

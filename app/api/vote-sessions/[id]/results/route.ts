@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
+import type { NeonQueryFunction } from '@neondatabase/serverless';
 import type { VoteSessionResults } from '@/types/voting';
 
 function getDb() {
@@ -50,7 +51,7 @@ export async function GET(
 }
 
 async function handleRegularVote(
-  sql: ReturnType<typeof neon>,
+  sql: NeonQueryFunction<false, false>,
   sessionId: string,
   eligibleCount: number,
 ): Promise<NextResponse> {
@@ -100,7 +101,7 @@ async function handleRegularVote(
 }
 
 async function handleClosestDestination(
-  sql: ReturnType<typeof neon>,
+  sql: NeonQueryFunction<false, false>,
   sessionId: string,
   eligibleRows: Record<string, unknown>[],
   eligibleCount: number,
